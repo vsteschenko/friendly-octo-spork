@@ -4,7 +4,7 @@ import os, sqlite3, bcrypt
 
 
 load_dotenv()
-DATABASE = 'finance_app.db'
+DATABASE = os.getenv("DATABASE")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
@@ -21,11 +21,34 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+def get_user_id(username):
+    cur = get_db().cursor()
+    cur.execute("SELECT id FROM users WHERE username = ?",(username,))
+    user_id = cur.fetchone()
+    return user_id    
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
     if 'username' in session:
-        return f'Logged in as {session["username"]}'
+        username = session["username"]
+        user_id = get_user_id(username)[0]
+        
+        cur = get_db().cursor()
+        cur.execute("SELECT transactions.amount, transactions.type, transactions.id FROM transactions JOIN users ON transactions.user_id=users.id WHERE username = ?", (username,))
+        transactions = cur.fetchall()
+        
+        cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=?",(user_id,))
+        sum = cur.fetchone()[0]
+
+        if request.method == 'POST':
+            type = request.form['type']
+            amount = request.form['amount']
+            cur.execute("INSERT INTO transactions(type,amount,user_id) VALUES(?,?,?)",(type, amount, user_id,))
+            get_db().commit()
+            cur.close()
+
+            return redirect(url_for('index'))
+        return render_template("index.html", txs=transactions, sum=sum)
     return 'You are not logged in'
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -48,8 +71,11 @@ def signup():
             cur.execute("INSERT INTO users(username, password) VALUES(?,?)",(username,hash,))
             get_db().commit()
             cur.close()
-            return 'User registered successfully'
+            
+            session['username'] = username
+            return redirect(url_for('index'))
         else:
+            cur.close()
             return 'User exists'
 
         return 'some message'
@@ -64,18 +90,16 @@ def signup():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        session['username'] = request.form['username']
         username = request.form['username']
         password = request.form['password']
         
         cur = get_db().cursor()
         cur.execute("SELECT password FROM users WHERE username = ?", (username,))
         user = cur.fetchone()
+        cur.close()
 
         if user is None:
             return 'User not found'
-        
-        print(user[0])
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             session['username'] = username
@@ -93,6 +117,5 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # remove the username from the session if it's there
     session.pop('username', None)
     return redirect(url_for('index'))
