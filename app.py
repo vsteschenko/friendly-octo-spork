@@ -34,7 +34,7 @@ def index():
         user_id = get_user_id(username)[0]
         
         cur = get_db().cursor()
-        cur.execute("SELECT transactions.amount, transactions.type, transactions.id FROM transactions JOIN users ON transactions.user_id=users.id WHERE username = ?", (username,))
+        cur.execute("SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp FROM transactions JOIN users ON transactions.user_id=users.id WHERE username = ?", (username,))
         transactions = cur.fetchall()
         
         cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=?",(user_id,))
@@ -49,6 +49,17 @@ def index():
 
             return redirect(url_for('index'))
         return render_template("index.html", txs=transactions, sum=sum)
+    return 'You are not logged in'
+
+@app.route('/delete_tx', methods=['POST'])
+def delete_tx():
+    if 'username' in session:
+        tx_id = request.form['tx_id']
+        cur = get_db().cursor()
+        cur.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
+        get_db().commit()
+        cur.close()
+        return redirect(url_for('index'))
     return 'You are not logged in'
 
 @app.route('/signup', methods=['GET', 'POST'])
