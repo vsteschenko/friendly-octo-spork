@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+instance/
+finance_app.db
+.env
