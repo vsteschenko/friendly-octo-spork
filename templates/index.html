@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function showOptions(type){
+            if (type == 'income') {
+                document.getElementById('income-options').style.display = 'inline';
+                document.getElementById('expense-options').style.display = 'none';
+            } else if (type == 'expense') {
+                document.getElementById('income-options').style.display = 'none';
+                document.getElementById('expense-options').style.display = 'inline';
+            }
+        }
+    </script>
+    <script>
+        function loadExpenseChart() {
+            fetch('/expenses_by_category?year={{ current_year }}&month={{ current_month }}')
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById("expenseChart").getContext("2d");
+    
+                    new Chart(ctx, {
+                        type: "doughnut",
+                        data: {
+                            labels: data.categories,
+                            datasets: [{
+                                label: "Expenses by Category",
+                                data: data.amounts,
+                                backgroundColor: [
+                                    "red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "brown"
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: "top"
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error("Error loading chart data:", error));
+        }
+    
+        window.onload = loadExpenseChart;
+    </script>    
+</head>
+<body>
+    <form method="get" action="{{ url_for('index') }}">
+        <input type="hidden" name="year" value="{{ current_year }}">
+        <button type="submit" name="month" value="{{ current_month - 1 }}">previous</button>
+        {{current_month}}/{{current_year}}
+        <button type="submit" name="month" value="{{ current_month + 1 }}">next</button>
+    </form>
+    
+    <form method="post">
+        <input type="hidden" name="year" value="{{ current_year }}">
+        <input type="hidden" name="month" value="{{ current_month }}">
+
+        <input type="number" name="amount" placeholder="amount" step="0.01" min="0.01" required>
+        <input type="radio" id="expense" name="type" value="expense" onclick="showOptions('expense')" required>
+        <label for="expense">expense</label>
+        <input type="radio" id="income" name="type" value="income" onclick="showOptions('income')" required>
+        <label for="income">income</label>
+
+        <div id="expense-options" style="display:none;">
+            <select name="expense-category">
+                <option disabled selected>Select Expense Category</option>
+                <option value="grocery">Grocery</option>
+                <option value="rent">Rent</option>
+                <option value="utilities">Utilities</option>
+                <option value="transport">Transportation</option>
+                <option value="insurance">Insurance</option>
+                <option value="dining">Dining Out</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="shopping">Shopping</option>
+                <option value="health">Health & Fitness</option>
+                <option value="beauty">Beauty & Personal Care</option>
+                <option value="loans">Loan Payments</option>
+                <option value="credit_card">Credit Card Payments</option>
+                <option value="savings">Savings & Investments</option>
+                <option value="education">Childcare & Education</option>
+                <option value="pets">Pets</option>
+                <option value="home_maintenance">Home Maintenance</option>
+                <option value="gifts">Gifts & Donations</option>
+                <option value="travel">Travel</option>
+                <option value="subscriptions">Subscriptions & Memberships</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div id="income-options" style="display:none;">
+            <select name="income-category">
+                <option disabled selected>Select Income Category</option>
+                <option value="salary">Salary</option>
+                <option value="freelance">Freelance</option>
+                <option value="business">Business Income</option>
+                <option value="investments">Investments</option>
+                <option value="rental_income">Rental Income</option>
+                <option value="dividends">Dividends</option>
+                <option value="gifts">Gifts</option>
+                <option value="refunds">Refunds</option>
+                <option value="government_benefits">Government Benefits</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <input type="submit" value="submit">
+    </form>
+    <br>
+    <ol>
+        {% for tx in txs %}
+            <li>Amount: {{ tx[0] }} Type: {{tx[1]}} {{ tx[4] }} {{ tx[3] }}
+                <form method="POST" action="{{ url_for('delete_tx', tx_id=tx[2]) }}" style="display: inline;">
+                    <input type="hidden" name="tx_id" value="{{ tx[2] }}">
+
+                    <input type="hidden" name="year" value="{{ current_year }}">
+                    <input type="hidden" name="month" value="{{ current_month }}">
+
+                    <input type="submit" value="delete">
+                </form>
+                
+            </li>
+        {% endfor %}
+    </ol>
+    <!-- <canvas id="expenseChart" width="400" height="400"></canvas> -->
+    <!-- <canvas id="expenseChart" style="width: 500px; height: 500px;"></canvas> -->
+    <div style="width: 250px; height: 250px;">
+        <canvas id="expenseChart"></canvas>
+    </div>
+    <ul>
+        {% for line in sum_by_categories %}
+            <li>{{ line[0] }} {{ line[1]}}</li>
+        {% endfor %}
+    </ul>
+    Total: {{sum}}
+
+</body>
+</html>
