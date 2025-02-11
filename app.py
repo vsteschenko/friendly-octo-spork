@@ -15,11 +15,17 @@ def get_db():
         db = g._database = sqlite3.connect(DATABASE)
     return db
 
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
 def get_user_id(username):
     cur = get_db().cursor()
     cur.execute("SELECT id FROM users WHERE username = ?",(username,))
     user_id = cur.fetchone()
-    return user_id    
+    return user_id
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -77,9 +83,16 @@ def index():
             amount = request.form['amount']
             if type == 'expense':
                 amount = -int(amount)
-            transaction_date = datetime(current_year, current_month, 1, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
+
+            now = datetime.now()
+
+            if current_year == now.year and current_month == now.month:
+                transaction_date = now.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                transaction_date = datetime(current_year, current_month, 1, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
+
             if not type or not amount or not user_id or not category:
-                return 'Something went wrong'
+                return {'error': 'Something went wrong'}, 401
             cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date,category))
             get_db().commit()
             cur.close()
@@ -115,6 +128,8 @@ def expenses_by_category():
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
+    if 'username' not in session:
+        return {'error': 'Not logged in'}, 401
     if 'username' in session:
         current_year = request.args.get('year')
         current_month = request.form.get('month')
@@ -171,14 +186,14 @@ def login():
         user = cur.fetchone()
         cur.close()
 
-        if user is None:
-            return 'User not found'
+        if not user:
+            return 'User not found', 404
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             session['username'] = username
             return redirect(url_for('index'))
         else:
-            return 'Invalid password'
+            return 'Invalid password', 401
 
     return """
         <form method="post">
