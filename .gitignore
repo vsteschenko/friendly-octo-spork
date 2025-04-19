@@ -4,3 +4,5 @@ __pycache__/
 instance/
 finance_app.db
 .env
+venv
+friendly-octo-spork.db

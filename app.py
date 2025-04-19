@@ -82,7 +82,7 @@ def index():
 
             amount = request.form['amount']
             if type == 'expense':
-                amount = -int(amount)
+                amount = -float(amount)
 
             now = datetime.now()
 
