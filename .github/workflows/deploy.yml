@@ -28,8 +28,9 @@ jobs:
     - name: Deploy to server
       run: |
         ssh -i ~/.ssh/id_rsa root@134.122.56.15 << EOF
-          cd /path/to/your/project
+          cd /friendly-octo-spork
           git pull origin main
-          # если у тебя есть дополнительные команды для деплоя (например, установка зависимостей или перезапуск сервера), добавь их сюда
+          source venv/bin/activate
+          pip install -r requirements.txt
           sudo systemctl restart your-app-service
         EOF
