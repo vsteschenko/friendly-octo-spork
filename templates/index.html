@@ -53,7 +53,6 @@
     </script>    
 </head>
 <body>
-    <h1>TEST</h1>
     <form method="get" action="{{ url_for('index') }}">
         <input type="hidden" name="year" value="{{ current_year }}">
         <button type="submit" name="month" value="{{ current_month - 1 }}">previous</button>
