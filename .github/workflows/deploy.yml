@@ -18,19 +18,16 @@ jobs:
         mkdir -p ~/.ssh
         echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 134.122.56.15 >> ~/.ssh/known_hosts
       env:
         VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
-    - name: Add SSH host to known hosts
-      run: |
-        ssh-keyscan -H 134.122.56.15 >> ~/.ssh/known_hosts
-
     - name: Deploy to server
       run: |
-        ssh -i ~/.ssh/id_rsa root@134.122.56.15 << EOF
-          cd /friendly-octo-spork
+        ssh -i ~/.ssh/id_rsa root@134.122.56.15 << 'EOF'
+          cd ~/friendly-octo-spork
           git pull origin main
           source venv/bin/activate
           pip install -r requirements.txt
-          sudo systemctl restart your-app-service
+          sudo systemctl restart gunicorn
         EOF
