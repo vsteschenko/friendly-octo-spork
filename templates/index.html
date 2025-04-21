@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script>
         function showOptions(type){
             if (type == 'income') {
@@ -53,13 +54,14 @@
     </script>    
 </head>
 <body>
-    <div></div>
-    <form method="get" action="{{ url_for('index') }}">
-        <input type="hidden" name="year" value="{{ current_year }}">
-        <button type="submit" name="month" value="{{ current_month - 1 }}">previous</button>
-        {{current_month}}/{{current_year}}
-        <button type="submit" name="month" value="{{ current_month + 1 }}">next</button>
-    </form>
+    <nav>
+        <form method="get" action="{{ url_for('index') }}">
+            <input type="hidden" name="year" value="{{ current_year }}">
+            <button type="submit" name="month" value="{{ current_month - 1 }}">previous</button>
+            {{current_month}}/{{current_year}}
+            <button type="submit" name="month" value="{{ current_month + 1 }}">next</button>
+        </form>
+    </nav>
     
     <form method="post">
         <input type="hidden" name="year" value="{{ current_year }}">
@@ -114,9 +116,9 @@
         <input type="submit" value="submit">
     </form>
     <br>
-    <ol>
+    <ol class="txs">
         {% for tx in txs %}
-            <li>Amount: {{ tx[0] }} Type: {{tx[1]}} {{ tx[4] }} {{ tx[3] }}
+            <li>{{ tx[0] }} {{ tx[4] }} {{ tx[3] }}
                 <form method="POST" action="{{ url_for('delete_tx', tx_id=tx[2]) }}" style="display: inline;">
                     <input type="hidden" name="tx_id" value="{{ tx[2] }}">
 

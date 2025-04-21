@@ -99,7 +99,9 @@ def index():
 
             return redirect(url_for('index', year=current_year, month=current_month))
         return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_year=current_year, sum_by_categories=sum_by_categories)
-    return 'You are not logged in'
+    else:
+        return redirect(url_for('login'))
+
 
 @app.route('/expenses_by_category')
 def expenses_by_category():
@@ -146,7 +148,8 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
+        if not username or not password:
+            return redirect(url_for('signup'))
         #encrypt password
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
@@ -157,7 +160,6 @@ def signup():
         check = cur.fetchone()
         
         if check is None:
-            # create a user
             cur.execute("INSERT INTO users(username, password) VALUES(?,?)",(username,hash,))
             get_db().commit()
             cur.close()
@@ -167,19 +169,15 @@ def signup():
         else:
             cur.close()
             return 'User exists'
-    return """
-        <form method="post">
-            <p><input type=text name=username>
-            <p><input type=password name=password>
-            <p><input type=submit value=Login>
-        </form>
-    """
+    return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        if not username or not password:
+            return redirect(url_for('login'))
         
         cur = get_db().cursor()
         cur.execute("SELECT password FROM users WHERE username = ?", (username,))
@@ -194,16 +192,9 @@ def login():
             return redirect(url_for('index'))
         else:
             return 'Invalid password', 401
-
-    return """
-        <form method="post">
-            <p><input type=text name=username>
-            <p><input type=password name=password>
-            <p><input type=submit value=Login>
-        </form>
-    """
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.pop('username', None)
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
