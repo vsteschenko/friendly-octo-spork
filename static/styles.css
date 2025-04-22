@@ -23,3 +23,12 @@ body {
     overflow-y: auto;
     height: 50%;
 }
+.expenseChart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#expenseChart {
+    width: 200px !important;
+    height: 200px !important;
+}

@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, redirect, url_for, g
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
+from calendar import monthrange
 
 load_dotenv()
 DATABASE = os.getenv("DATABASE")
@@ -35,6 +36,7 @@ def index():
 
         current_year = datetime.now().year
         current_month = datetime.now().month
+        current_day = datetime.now().day
 
         # check parameters
         if 'year' in request.args:
@@ -49,26 +51,47 @@ def index():
                 current_month = 1
                 current_year += 1
         
-        start_of_month = datetime(current_year, current_month, 1).strftime('%Y-%m-%d %H:%M:%S')
-        if current_month == 12:
-            end_of_month = datetime(current_year + 1, 1, 1).strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            end_of_month = datetime(current_year, current_month + 1, 1).strftime('%Y-%m-%d %H:%M:%S')
+        if 'day' in request.args:
+            current_day = int(request.args.get('day'))
+            days_in_month = monthrange(current_year, current_month)[1]
+            if current_day < 1:
+                current_month -= 1
+                if current_month < 1:
+                    current_month = 12
+                    current_year -= 1
+                current_day = monthrange(current_year, current_month)[1]
+            elif current_day > days_in_month:
+                current_month += 1
+                if current_month > 12:
+                    current_month = 1
+                    current_year += 1
+                current_day = 1
 
-        # fetch transactions for the current month
+        start_of_day = datetime(current_year, current_month, current_day, 0, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
+        end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
+
         cur = get_db().cursor()
         cur.execute("""
             SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp, transactions.category 
             FROM transactions JOIN users ON transactions.user_id=users.id 
             WHERE users.id = ? AND transactions.timestamp BETWEEN ? AND ?
-            """, (user_id, start_of_month, end_of_month))
+            """, (user_id, start_of_day, end_of_day))
         transactions = cur.fetchall()
 
-        cur.execute("SELECT category, SUM(amount) FROM transactions JOIN users ON transactions.user_id=users.id WHERE user_id=? AND  type='expense' AND timestamp BETWEEN ? AND ? GROUP BY category;",(user_id,start_of_month,end_of_month))
+        cur.execute("""
+            SELECT category, SUM(amount)
+            FROM transactions
+            JOIN users ON transactions.user_id=users.id
+            WHERE user_id=? AND type='expense' AND timestamp BETWEEN ? AND ?
+            GROUP BY category
+            """, (user_id, start_of_day, end_of_day))
         sum_by_categories = cur.fetchall()
 
-        # sum for the current month
-        cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND timestamp BETWEEN ? AND ?", (user_id, start_of_month, end_of_month))
+        cur.execute("""
+            SELECT SUM(amount) 
+            FROM transactions 
+            WHERE user_id=? AND timestamp BETWEEN ? AND ?
+            """, (user_id, start_of_day, end_of_day))
         sum = cur.fetchone()[0]
 
         if request.method == 'POST':
@@ -86,61 +109,77 @@ def index():
 
             now = datetime.now()
 
-            if current_year == now.year and current_month == now.month:
+            if current_year == now.year and current_month == now.month and current_day == now.day:
                 transaction_date = now.strftime('%Y-%m-%d %H:%M:%S')
             else:
-                transaction_date = datetime(current_year, current_month, 1, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
+                transaction_date = datetime(current_year, current_month, current_day, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
 
             if not type or not amount or not user_id or not category:
                 return {'error': 'Something went wrong'}, 401
-            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date,category))
+            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date, category))
             get_db().commit()
             cur.close()
 
-            return redirect(url_for('index', year=current_year, month=current_month))
-        return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_year=current_year, sum_by_categories=sum_by_categories)
+            return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
+        return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
     else:
         return redirect(url_for('login'))
 
 
 @app.route('/expenses_by_category')
 def expenses_by_category():
-    if 'username' in session:
-        username = session["username"]
-        user_id = get_user_id(username)[0]
+    if 'username' not in session:
+        return jsonify({"error": "Not logged in"}), 401
 
-        current_year = request.args.get('year', datetime.now().year, type=int)
-        current_month = request.args.get('month', datetime.now().month, type=int)
+    username = session["username"]
+    user_id = get_user_id(username)[0]
 
-        start_of_month = datetime(current_year, current_month, 1).strftime('%Y-%m-%d %H:%M:%S')
-        end_of_month = datetime(current_year, current_month + 1, 1).strftime('%Y-%m-%d %H:%M:%S') if current_month < 12 else datetime(current_year + 1, 1, 1).strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        current_year = int(request.args.get('year'))
+        current_month = int(request.args.get('month'))
+        current_day = int(request.args.get('day'))
+        selected_date = datetime(current_year, current_month, current_day)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid date parameters"}), 400
 
-        cur = get_db().cursor()
-        cur.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp BETWEEN ? AND ? GROUP BY category", (user_id, start_of_month, end_of_month))
+    start_of_day = datetime(current_year, current_month, current_day)
+    end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59)
 
-        data = cur.fetchall()
-        cur.close()
+    cur = get_db().cursor()
+    cur.execute("""
+        SELECT category, SUM(amount)
+        FROM transactions
+        WHERE user_id=? AND type='expense' AND timestamp BETWEEN ? AND ?
+        GROUP BY category
+        """, (
+            user_id,
+            start_of_day.strftime('%Y-%m-%d %H:%M:%S'),
+            end_of_day.strftime('%Y-%m-%d %H:%M:%S')
+        ))
+    data = cur.fetchall()
+    print(data)
+    cur.close()
 
-        categories = [row[0] for row in data]
-        amounts = [abs(row[1]) for row in data]
+    categories = [row[0] for row in data]
+    amounts = [abs(row[1]) for row in data]
 
-        return jsonify({"categories": categories, "amounts": amounts})
+    return jsonify({"categories": categories, "amounts": amounts})
 
-    return jsonify({"error": "Not logged in"}), 401
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
     if 'username' not in session:
         return {'error': 'Not logged in'}, 401
     if 'username' in session:
-        current_year = request.args.get('year')
+        current_year = request.form.get('year')
         current_month = request.form.get('month')
+        current_day = request.form.get('day')
         tx_id = request.form['tx_id']
         cur = get_db().cursor()
         cur.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
         get_db().commit()
         cur.close()
-        return redirect(url_for('index', year=current_year, month=current_month))
+        return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
     return 'You are not logged in'
 
 @app.route('/signup', methods=['GET', 'POST'])
