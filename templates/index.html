@@ -1,198 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finance</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
     <script>
-        function showOptions(type){
-            if (type == 'income') {
-                document.getElementById('income-options').style.display = 'inline';
-                document.getElementById('expense-options').style.display = 'none';
-            } else if (type == 'expense') {
-                document.getElementById('income-options').style.display = 'none';
-                document.getElementById('expense-options').style.display = 'inline';
-            }
+      function showOptions(type) {
+        if (type == "income") {
+          document.getElementById("income-options").style.display = "inline";
+          document.getElementById("expense-options").style.display = "none";
+        } else if (type == "expense") {
+          document.getElementById("income-options").style.display = "none";
+          document.getElementById("expense-options").style.display = "inline";
         }
+      }
     </script>
     <script>
-        const centerTextPlugin = {
-            id: 'centerText',
-            beforeDraw(chart) {
-                const { width, height, ctx } = chart;
-                ctx.save();
+      const centerTextPlugin = {
+        id: "centerText",
+        beforeDraw(chart) {
+          const { width, height, ctx } = chart;
+          ctx.save();
 
-                const label = 'Total';
-                const value = '{{ sum }}';
+          const label = "Total";
+          const value = "{{ sum }}";
 
-                ctx.font = 'bold 14px Arial';
-                ctx.fillStyle = '#333';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+          ctx.font = "bold 14px Arial";
+          ctx.fillStyle = "#333";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
 
-                ctx.fillText(label, width / 2, height / 2 - 10);
-                
-                ctx.font = 'bold 16px Arial';
-                ctx.fillText(value, width / 2, height / 2 + 10);
+          ctx.fillText(label, width / 2, height / 2 - 10);
 
-                ctx.restore();
-            }
-        };
+          ctx.font = "bold 16px Arial";
+          ctx.fillText(value, width / 2, height / 2 + 10);
+
+          ctx.restore();
+        },
+      };
     </script>
     <script>
-        function loadExpenseChart() {
-            fetch(`/expenses_by_category?year={{ current_year }}&month={{ current_month }}&day={{ current_day }}`)
-                .then(response => response.json())
-                .then(data => {
-                    const ctx = document.getElementById("expenseChart").getContext("2d");
-    
-                    new Chart(ctx, {
-                        type: "doughnut",
-                        data: {
-                            labels: data.categories,
-                            datasets: [{
-                                // label: "Expenses by Category",
-                                data: data.amounts,
-                                backgroundColor: [
-                                    "red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "brown"
-                                ],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    // position: "bottom"
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: [centerTextPlugin]
-                    });
-                })
-                .catch(error => console.error("Error loading chart data:", error));
+      function loadExpenseChart() {
+        fetch(
+          `/expenses_by_category?year={{ current_year }}&month={{ current_month }}&day={{ current_day }}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            const ctx = document
+              .getElementById("expenseChart")
+              .getContext("2d");
+
+            new Chart(ctx, {
+              type: "doughnut",
+              data: {
+                labels: data.categories,
+                datasets: [
+                  {
+                    // label: "Expenses by Category",
+                    data: data.amounts,
+                    backgroundColor: [
+                      "red",
+                      "blue",
+                      "green",
+                      "yellow",
+                      "purple",
+                      "orange",
+                      "pink",
+                      "cyan",
+                      "brown",
+                    ],
+                    borderWidth: 1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: {
+                    // position: "bottom"
+                    display: false,
+                  },
+                },
+              },
+              plugins: [centerTextPlugin],
+            });
+          })
+          .catch((error) => console.error("Error loading chart data:", error));
+      }
+
+      window.onload = loadExpenseChart;
+    </script>
+    <script>
+      function sumByCategory() {
+        const element = document.getElementsByClassName("sumByCategory")[0];
+        const elementTxs = document.getElementsByClassName("txs")[0];
+        if (element.style.display === "none" || element.style.display === "") {
+          element.style.display = "flex";
+          elementTxs.style.display = "none";
         }
-    
-        window.onload = loadExpenseChart;
+      }
     </script>
     <script>
-        function sumByCategory() {
-            const element = document.getElementsByClassName("sumByCategory")[0];
-            if (element.style.display === 'none' || element.style.display === '') {
-                element.style.display = 'flex';
-            } else {
-                element.style.display = 'none';
-            }
+      function allEntries() {
+        const element = document.getElementsByClassName("txs")[0];
+        const elementCat = document.getElementsByClassName("sumByCategory")[0];
+        if (element.style.display === "none" || element.style.display === "") {
+          element.style.display = "flex";
+          elementCat.style.display = "none";
         }
+      }
     </script>
-    <script>
-        function allEntries() {
-            const element = document.getElementsByClassName("txs")[0];
-            if (element.style.display === 'none' || element.style.display === '') {
-                element.style.display = 'flex';
-            } else {
-                element.style.display = 'none';
-            }
-        }
-    </script>
-</head>
-<body>
+  </head>
+  <body>
     <nav>
-        <form method="get" action="{{ url_for('index') }}">
-            <input type="hidden" name="year" value="{{ current_year }}">
-            <input type="hidden" name="month" value="{{ current_month }}">
-            <button type="submit" name="day" value="{{ current_day - 1 }}">previous</button>
-            {{current_day}}/{{current_month}}/{{current_year}}
-            <button type="submit" name="day" value="{{ current_day + 1 }}">next</button>
-        </form>
+      <form method="get" action="{{ url_for('index') }}">
+        <input type="hidden" name="year" value="{{ current_year }}" />
+        <input type="hidden" name="month" value="{{ current_month }}" />
+        <button type="submit" name="day" value="{{ current_day - 1 }}">
+          previous
+        </button>
+        {{current_day}}/{{current_month}}/{{current_year}}
+        <button type="submit" name="day" value="{{ current_day + 1 }}">
+          next
+        </button>
+      </form>
     </nav>
 
     <div class="expenseChart">
-        <canvas id="expenseChart"></canvas>
+      <canvas id="expenseChart"></canvas>
     </div>
-    <div class="buttons">    
-        <button onclick="allEntries()">Entries</button>
-        <button onclick="sumByCategory()">Sum By Category</button>
+    <div class="buttons">
+      <button onclick="allEntries()">Entries</button>
+      <button onclick="sumByCategory()">Sum By Category</button>
     </div>
-    <form method="post">
-        <input type="hidden" name="year" value="{{ current_year }}">
-        <input type="hidden" name="month" value="{{ current_month }}">
-
-        <input type="number" name="amount" placeholder="amount" step="0.01" min="0.01" required>
-        <input type="radio" id="expense" name="type" value="expense" onclick="showOptions('expense')" required>
-        <label for="expense">expense</label>
-        <input type="radio" id="income" name="type" value="income" onclick="showOptions('income')" required>
-        <label for="income">income</label>
-
-        <div id="expense-options" style="display:none;">
-            <select name="expense-category">
-                <option disabled selected>Select Expense Category</option>
-                <option value="grocery">Grocery</option>
-                <option value="rent">Rent</option>
-                <option value="utilities">Utilities</option>
-                <option value="transport">Transportation</option>
-                <option value="insurance">Insurance</option>
-                <option value="dining">Dining Out</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="shopping">Shopping</option>
-                <option value="health">Health & Fitness</option>
-                <option value="beauty">Beauty & Personal Care</option>
-                <option value="loans">Loan Payments</option>
-                <option value="credit_card">Credit Card Payments</option>
-                <option value="savings">Savings & Investments</option>
-                <option value="education">Childcare & Education</option>
-                <option value="pets">Pets</option>
-                <option value="home_maintenance">Home Maintenance</option>
-                <option value="gifts">Gifts & Donations</option>
-                <option value="travel">Travel</option>
-                <option value="subscriptions">Subscriptions & Memberships</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
-        <div id="income-options" style="display:none;">
-            <select name="income-category">
-                <option disabled selected>Select Income Category</option>
-                <option value="salary">Salary</option>
-                <option value="freelance">Freelance</option>
-                <option value="business">Business Income</option>
-                <option value="investments">Investments</option>
-                <option value="rental_income">Rental Income</option>
-                <option value="dividends">Dividends</option>
-                <option value="gifts">Gifts</option>
-                <option value="refunds">Refunds</option>
-                <option value="government_benefits">Government Benefits</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
-        <input type="submit" value="submit">
-    </form>
-    <br>
+    <br />
     <div class="txs">
-        <div id="tx"><b>Transactions</b></div>
-        {% for tx in txs %}
-            <div>{{ tx[0] }} {{ tx[4] }} {{ tx[3] | datetimeformat('%H:%M') }}
-                <form method="POST" action="{{ url_for('delete_tx', tx_id=tx[2]) }}" style="display: inline;">
-                    <input type="hidden" name="tx_id" value="{{ tx[2] }}">
-                    <input type="hidden" name="year" value="{{ current_year }}">
-                    <input type="hidden" name="month" value="{{ current_month }}">
-                    <input type="hidden" name="day" value="{{ current_day }}">
-                    <input type="submit" value="delete">
-                </form>
-            </div>
-        {% endfor %}
-        
+      <div id="tx"><b>Transactions</b></div>
+      {% for tx in txs %}
+      <div>
+        {{ tx[0] }} {{ tx[4] }} {{ tx[3] | datetimeformat('%H:%M') }}
+        <form
+          method="POST"
+          action="{{ url_for('delete_tx', tx_id=tx[2]) }}"
+          style="display: inline"
+        >
+          <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
+          <input type="hidden" name="year" value="{{ current_year }}" />
+          <input type="hidden" name="month" value="{{ current_month }}" />
+          <input type="hidden" name="day" value="{{ current_day }}" />
+          <input type="submit" value="delete" />
+        </form>
+      </div>
+      {% endfor %}
     </div>
 
     <div class="sumByCategory">
-        <ul>
-            {% for line in sum_by_categories %}
-                <li>{{ line[0] }} {{ line[1]}}</li>
-            {% endfor %}
-        </ul>
+      <div id="tx"><b>Categories</b></div>
+      <div>
+        {% for line in sum_by_categories %}
+        <div>{{ line[0] }} {{ line[1]}}</div>
+        {% endfor %}
+      </div>
     </div>
 
-</body>
+    <div class="actions">
+      <button id="spendBtn">Spend</button>
+      <button id="incomeBtn">Income</button>
+    </div>
+
+    <div id="txModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>New Transaction</h2>
+        <form method="post" id="txForm">
+          <input type="hidden" name="year" value="{{ current_year }}" />
+          <input type="hidden" name="month" value="{{ current_month }}" />
+          <input type="hidden" name="day" value="{{ current_day }}" />
+          <input type="hidden" id="txType" name="type" value="" />
+
+          <input
+            type="number"
+            name="amount"
+            placeholder="amount"
+            step="0.01"
+            min="0.01"
+            required
+          />
+
+          <div id="expense-options" style="display: none">
+            <select name="expense-category" required>
+              <option disabled selected>Select Expense Category</option>
+              <option value="grocery">Grocery</option>
+              <option value="rent">Rent</option>
+              <option value="utilities">Utilities</option>
+              <option value="transport">Transportation</option>
+              <option value="insurance">Insurance</option>
+              <option value="dining">Dining Out</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="shopping">Shopping</option>
+              <option value="health">Health & Fitness</option>
+              <option value="beauty">Beauty & Personal Care</option>
+              <option value="loans">Loan Payments</option>
+              <option value="credit_card">Credit Card Payments</option>
+              <option value="savings">Savings & Investments</option>
+              <option value="education">Childcare & Education</option>
+              <option value="pets">Pets</option>
+              <option value="home_maintenance">Home Maintenance</option>
+              <option value="gifts">Gifts & Donations</option>
+              <option value="travel">Travel</option>
+              <option value="subscriptions">Subscriptions & Memberships</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div id="income-options" style="display: none">
+            <select name="income-category" required>
+              <option disabled selected>Select Income Category</option>
+              <option value="salary">Salary</option>
+              <option value="freelance">Freelance</option>
+              <option value="business">Business Income</option>
+              <option value="investments">Investments</option>
+              <option value="rental_income">Rental Income</option>
+              <option value="dividends">Dividends</option>
+              <option value="gifts">Gifts</option>
+              <option value="refunds">Refunds</option>
+              <option value="government_benefits">Government Benefits</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <input type="submit" value="Submit" />
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("spendBtn").onclick = () => {
+          document.getElementById("txModal").classList.remove("hidden");
+          document.getElementById("txType").value = "expense"; // Set transaction type
+          showOptions("expense");
+        };
+
+        document.getElementById("incomeBtn").onclick = () => {
+          document.getElementById("txModal").classList.remove("hidden");
+          document.getElementById("txType").value = "income"; // Set transaction type
+          showOptions("income");
+        };
+
+        document.querySelector(".close-btn").onclick = () => {
+          document.getElementById("txModal").classList.add("hidden");
+        };
+
+        window.onclick = (event) => {
+          const modal = document.getElementById("txModal");
+          if (event.target === modal) {
+            modal.classList.add("hidden");
+          }
+        };
+      });
+    </script>
+  </body>
 </html>
