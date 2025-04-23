@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
     <script>
       function showOptions(type) {
         if (type == "income") {
@@ -89,7 +92,6 @@
           })
           .catch((error) => console.error("Error loading chart data:", error));
       }
-
       window.onload = loadExpenseChart;
     </script>
     <script>
@@ -181,7 +183,14 @@
           <input type="hidden" name="month" value="{{ current_month }}" />
           <input type="hidden" name="day" value="{{ current_day }}" />
           <input type="hidden" id="txType" name="type" value="" />
-          <input type="number" name="amount" placeholder="amount" step="0.01" min="0.01" required/>
+          <input
+            type="number"
+            name="amount"
+            placeholder="amount"
+            step="0.01"
+            min="0.01"
+            required
+          />
 
           <div id="expense-options" style="display: none">
             <select name="expense-category" required>
@@ -257,27 +266,27 @@
       });
     </script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", () => {
         const datePicker = document.getElementById("datePicker");
-    
-        let lastValue = "";
-    
-        datePicker.addEventListener("focus", () => {
-            lastValue = datePicker.value;
+
+        let userInteracted = false;
+
+        datePicker.addEventListener("pointerdown", () => {
+          userInteracted = true;
         });
-    
+
         datePicker.addEventListener("change", () => {
-            if (datePicker.value && datePicker.value !== lastValue) {
-            const selectedDate = new Date(datePicker.value);
-            if (!isNaN(selectedDate)) {
-                const year = selectedDate.getFullYear();
-                const month = selectedDate.getMonth() + 1;
-                const day = selectedDate.getDate();
-                window.location.href = `/?year=${year}&month=${month}&day=${day}`;
-            }
-            }
+          if (!userInteracted) return;
+
+          const selectedDate = new Date(datePicker.value);
+          if (!isNaN(selectedDate)) {
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+          }
         });
-        });
-  </script>
+      });
+    </script>
   </body>
 </html>
