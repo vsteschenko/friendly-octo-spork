@@ -39,6 +39,8 @@ body {
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
     width: 100%;
+    min-height: 400px;
+    max-height: 500px;
     div {
         padding: 5px;
         display: flex;
@@ -52,6 +54,8 @@ body {
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
     width: 100%;
+    min-height: 400px;
+    max-height: 500px;
     div {
         padding: 5px;
         display: flex;
