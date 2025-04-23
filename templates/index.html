@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Finance</title>
+    <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link
       rel="stylesheet"
@@ -183,15 +183,7 @@
           <input type="hidden" name="month" value="{{ current_month }}" />
           <input type="hidden" name="day" value="{{ current_day }}" />
           <input type="hidden" id="txType" name="type" value="" />
-
-          <input
-            type="number"
-            name="amount"
-            placeholder="amount"
-            step="0.01"
-            min="0.01"
-            required
-          />
+          <input type="number" name="amount" placeholder="amount" step="0.01" min="0.01" required/>
 
           <div id="expense-options" style="display: none">
             <select name="expense-category" required>
@@ -244,13 +236,13 @@
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("spendBtn").onclick = () => {
           document.getElementById("txModal").classList.remove("hidden");
-          document.getElementById("txType").value = "expense"; // Set transaction type
+          document.getElementById("txType").value = "expense";
           showOptions("expense");
         };
 
         document.getElementById("incomeBtn").onclick = () => {
           document.getElementById("txModal").classList.remove("hidden");
-          document.getElementById("txType").value = "income"; // Set transaction type
+          document.getElementById("txType").value = "income";
           showOptions("income");
         };
 
