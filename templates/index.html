@@ -258,18 +258,26 @@
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-          const datePicker = document.getElementById("datePicker");
-      
-          datePicker.addEventListener("change", () => {
+        const datePicker = document.getElementById("datePicker");
+    
+        let lastValue = "";
+    
+        datePicker.addEventListener("focus", () => {
+            lastValue = datePicker.value;
+        });
+    
+        datePicker.addEventListener("change", () => {
+            if (datePicker.value && datePicker.value !== lastValue) {
             const selectedDate = new Date(datePicker.value);
             if (!isNaN(selectedDate)) {
-              const year = selectedDate.getFullYear();
-              const month = selectedDate.getMonth() + 1;
-              const day = selectedDate.getDate();
-              window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth() + 1;
+                const day = selectedDate.getDate();
+                window.location.href = `/?year=${year}&month=${month}&day=${day}`;
             }
-          });
+            }
         });
-      </script>
+        });
+  </script>
   </body>
 </html>
