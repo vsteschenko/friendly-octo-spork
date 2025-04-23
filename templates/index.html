@@ -77,7 +77,27 @@
         }
     
         window.onload = loadExpenseChart;
-    </script>    
+    </script>
+    <script>
+        function sumByCategory() {
+            const element = document.getElementsByClassName("sumByCategory")[0];
+            if (element.style.display === 'none' || element.style.display === '') {
+                element.style.display = 'flex';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+    </script>
+    <script>
+        function allEntries() {
+            const element = document.getElementsByClassName("txs")[0];
+            if (element.style.display === 'none' || element.style.display === '') {
+                element.style.display = 'flex';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+    </script>
 </head>
 <body>
     <nav>
@@ -93,7 +113,10 @@
     <div class="expenseChart">
         <canvas id="expenseChart"></canvas>
     </div>
-    
+    <div class="buttons">    
+        <button onclick="allEntries()">Entries</button>
+        <button onclick="sumByCategory()">Sum By Category</button>
+    </div>
     <form method="post">
         <input type="hidden" name="year" value="{{ current_year }}">
         <input type="hidden" name="month" value="{{ current_month }}">
@@ -147,27 +170,29 @@
         <input type="submit" value="submit">
     </form>
     <br>
-    <ul class="txs">
+    <div class="txs">
+        <div id="tx"><b>Transactions</b></div>
         {% for tx in txs %}
-            <li>{{ tx[0] }} {{ tx[4] }} {{ tx[3] }}
+            <div>{{ tx[0] }} {{ tx[4] }} {{ tx[3] | datetimeformat('%H:%M') }}
                 <form method="POST" action="{{ url_for('delete_tx', tx_id=tx[2]) }}" style="display: inline;">
                     <input type="hidden" name="tx_id" value="{{ tx[2] }}">
                     <input type="hidden" name="year" value="{{ current_year }}">
                     <input type="hidden" name="month" value="{{ current_month }}">
                     <input type="hidden" name="day" value="{{ current_day }}">
-
                     <input type="submit" value="delete">
                 </form>
-                
-            </li>
+            </div>
         {% endfor %}
-    </ul>
+        
+    </div>
 
-    <ul>
-        {% for line in sum_by_categories %}
-            <li>{{ line[0] }} {{ line[1]}}</li>
-        {% endfor %}
-    </ul>
+    <div class="sumByCategory">
+        <ul>
+            {% for line in sum_by_categories %}
+                <li>{{ line[0] }} {{ line[1]}}</li>
+            {% endfor %}
+        </ul>
+    </div>
 
 </body>
 </html>

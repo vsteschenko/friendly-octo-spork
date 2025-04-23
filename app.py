@@ -10,6 +10,11 @@ DATABASE = os.getenv("DATABASE")
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 
+@app.template_filter('datetimeformat')
+def datetimeformat(value, format='%H:%M'):
+    dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+    return dt.strftime(format)
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -125,7 +130,6 @@ def index():
     else:
         return redirect(url_for('login'))
 
-
 @app.route('/expenses_by_category')
 def expenses_by_category():
     if 'username' not in session:
@@ -138,13 +142,11 @@ def expenses_by_category():
         current_year = int(request.args.get('year'))
         current_month = int(request.args.get('month'))
         current_day = int(request.args.get('day'))
-        selected_date = datetime(current_year, current_month, current_day)
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid date parameters"}), 400
 
     start_of_day = datetime(current_year, current_month, current_day)
     end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59)
-
     cur = get_db().cursor()
     cur.execute("""
         SELECT category, SUM(amount)
@@ -157,14 +159,10 @@ def expenses_by_category():
             end_of_day.strftime('%Y-%m-%d %H:%M:%S')
         ))
     data = cur.fetchall()
-    print(data)
     cur.close()
-
     categories = [row[0] for row in data]
     amounts = [abs(row[1]) for row in data]
-
     return jsonify({"categories": categories, "amounts": amounts})
-
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
