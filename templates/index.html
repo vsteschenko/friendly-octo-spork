@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
     <script>
       function showOptions(type) {
         if (type == "income") {
@@ -129,6 +126,7 @@
           next
         </button>
       </form>
+      <input type="date" id="datePicker" />
     </nav>
 
     <div class="expenseChart">
@@ -258,5 +256,20 @@
         };
       });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const datePicker = document.getElementById("datePicker");
+      
+          datePicker.addEventListener("change", () => {
+            const selectedDate = new Date(datePicker.value);
+            if (!isNaN(selectedDate)) {
+              const year = selectedDate.getFullYear();
+              const month = selectedDate.getMonth() + 1;
+              const day = selectedDate.getDate();
+              window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+            }
+          });
+        });
+      </script>
   </body>
 </html>
