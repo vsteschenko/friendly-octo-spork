@@ -29,9 +29,14 @@ body {
     border: 1px solid grey;
 }
 #login {
-    margin: 10px;
-    height: 30px;
-    border-radius: 5px;
-    border: 1px solid grey;
-    width: 120px;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+}
+#login:hover {
+    background-color: #0056b3;
 }
