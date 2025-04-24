@@ -207,7 +207,7 @@
           width: 24px;
           height: 24px;
           position: absolute;
-          top: 0;
+          top: 5;
           right: 10px;
           z-index: 9999;
         "
@@ -229,15 +229,17 @@
         </svg>
       </button>
     </nav>
+    <div class="chartBorder">
+      <div class="expenseChart">
+        <canvas id="expenseChart"></canvas>
+      </div>
+      <div class="buttons">
+        <button onclick="allEntries()" id="buttonsMargin">Transactions</button>
+        <button onclick="sumByCategory()" id="buttonsMargin">Sum By Category</button>
+        <button>Report</button>
+      </div>
+    </div>
 
-    <div class="expenseChart">
-      <canvas id="expenseChart"></canvas>
-    </div>
-    <div class="buttons">
-      <button onclick="allEntries()">Transactions</button>
-      <button onclick="sumByCategory()">Sum By Category</button>
-      <button>Report</button>
-    </div>
     <br />
     <div class="txs">
       <div id="tx"><b>Transactions</b></div>

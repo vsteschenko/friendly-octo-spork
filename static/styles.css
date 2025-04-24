@@ -9,14 +9,13 @@ body {
     flex-direction: column;
     align-items: center;
     nav {
-        /* border: 1px solid rgb(235, 233, 233); */
+        border: 1px solid rgb(235, 233, 233);
         border-radius: 15px;
         width: 100%;
-        height: 40px;
+        height: 50px;
         display: flex;
         flex-direction: row;
         justify-content: center;
-        /* justify-content: space-between; */
         align-items: center;
         position: relative;
         margin: 10px;
@@ -27,6 +26,11 @@ body {
             justify-content: center;
         }
     }
+}
+.chartBorder {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
+    width: 100%;
 }
 .expenseChart {
     display: flex;
@@ -55,8 +59,8 @@ body {
         justify-content: space-between;
     }
 }
-.tx: hover {
-    background-color: grey;
+.tx:hover {
+    background-color: rgb(235, 233, 233);
 }
 .sumByCategory {
     display: none;
@@ -74,8 +78,11 @@ body {
 }
 .buttons {
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+    justify-content: center;
+    margin: 10px 0px;
+}
+#buttonsMargin {
+    margin-right: 20px;
 }
 /* window for tx*/
 .actions {
@@ -146,10 +153,10 @@ body {
     background-color: #218838;
   }
 
-
-
 /* stick buttons to the bottom */
   .actions {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -196,6 +203,14 @@ body {
     nav {
         max-width: 600px;
     }
+    .chartBorder {
+        max-width: 600px;
+    }
+    .actions {
+        max-width: 600px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
   }
   
   svg {
