@@ -9,13 +9,23 @@ body {
     flex-direction: column;
     align-items: center;
     nav {
+        /* border: 1px solid rgb(235, 233, 233); */
+        border-radius: 15px;
         width: 100%;
         height: 40px;
         display: flex;
         flex-direction: row;
         justify-content: center;
+        /* justify-content: space-between; */
         align-items: center;
+        position: relative;
         margin: 10px;
+        form {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
     }
 }
 .expenseChart {
@@ -44,6 +54,9 @@ body {
         flex-direction: row;
         justify-content: space-between;
     }
+}
+.tx: hover {
+    background-color: grey;
 }
 .sumByCategory {
     display: none;
@@ -169,6 +182,9 @@ body {
     font-size: 1rem;
     cursor: pointer;
   }
+  #datePicker {
+    width: 70px;
+  }
 
   @media (min-width: 768px) {
     .txs {
@@ -177,5 +193,14 @@ body {
     .sumByCategory {
         max-width: 600px;
     }
+    nav {
+        max-width: 600px;
+    }
   }
   
+  svg {
+    stroke: #007bff;
+  }
+  svg:hover {
+    stroke: #0056b3; 
+  }
