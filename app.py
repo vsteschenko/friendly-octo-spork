@@ -183,10 +183,11 @@ def delete_tx():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].lower()
         password = request.form['password']
         if not username or not password:
-            return redirect(url_for('signup'))
+            error='Username and Password missing'
+            return render_template('signup.html', error=error)
         #encrypt password
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
@@ -205,7 +206,8 @@ def signup():
             return redirect(url_for('index'))
         else:
             cur.close()
-            return 'User exists'
+            error='User with this email already exist'
+            return render_template('signup.html', error=error)
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -222,13 +224,15 @@ def login():
         cur.close()
 
         if not user:
-            return 'User not found', 404
+            error = 'Invalid username or password'
+            return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             session['username'] = username
             return redirect(url_for('index'))
         else:
-            return 'Invalid password', 401
+            error = 'Invalid username or password'
+            return render_template('login.html', error=error)
     return render_template('login.html')
 
 @app.route('/logout')
