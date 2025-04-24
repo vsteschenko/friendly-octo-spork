@@ -51,10 +51,17 @@
       };
     </script>
     <script>
-      function logout() {
-        fetch(`/logout`);
-        window.location.reload(true);
-      }
+        function logout() {
+        fetch('/logout', { method: 'GET' })
+            .then((response) => {
+            if (response.ok) {
+                window.location.href = '/login';
+            } else {
+                console.error('Error');
+            }
+            })
+            .catch((error) => console.error('Error:', error));
+        }
     </script>
     <script>
       function loadExpenseChart() {
