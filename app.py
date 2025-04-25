@@ -63,7 +63,7 @@ def send_verification_email(email, token):
 
     with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
         server.starttls()
-        server.login('8ab566001@smtp-brevo.com', os.getenv("SMTP_PASSWORD"))
+        server.login(os.getenv("SMTP_LOGIN"), os.getenv("SMTP_PASSWORD"))
         server.send_message(msg)
 
 def generate_token():
