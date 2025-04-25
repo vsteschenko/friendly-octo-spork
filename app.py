@@ -58,8 +58,8 @@ def send_verification_email(email, token):
     msg['Subject'] = 'Verify you email'
     msg['From'] = 'slava@vsteschenko.me'
     msg['To'] = email
-    msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
-    # msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
+    # msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
+    msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
 
     with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
         server.starttls()
