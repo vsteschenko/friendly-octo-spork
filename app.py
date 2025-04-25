@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
 from calendar import monthrange
+from email_validator import validate_email,EmailNotValidError
 
 load_dotenv()
 DATABASE = os.getenv("DATABASE")
@@ -20,6 +21,13 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
     return db
+
+def email_validator(email):
+    try:
+        validate_email(email)
+        return True
+    except EmailNotValidError:
+        return False
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -188,6 +196,11 @@ def signup():
         if not email or not password:
             error='email and Password missing'
             return render_template('signup.html', error=error)
+        
+        if not email_validator(email):
+            error = 'Invalid email'
+            return render_template('signup.html', error=error)
+        
         #encrypt password
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
@@ -217,6 +230,10 @@ def login():
         password = request.form['password']
         if not email or not password:
             return redirect(url_for('login'))
+        
+        if not email_validator(email):
+            error = 'Invalid email'
+            return render_template('signup.html', error=error)
         
         cur = get_db().cursor()
         cur.execute("SELECT password FROM users WHERE email = ?", (email,))
