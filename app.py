@@ -7,12 +7,33 @@ from email_validator import validate_email,EmailNotValidError
 import secrets
 import smtplib
 from email.message import EmailMessage
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 DATABASE = os.getenv("DATABASE")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+
+# Set up logging to file
+log_file = 'app.log'
+handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
+handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+app.logger.addHandler(handler)
+
+# Optionally, you can also log to the console for development purposes
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+app.logger.addHandler(console_handler)
+
+# Set default logging level
+app.logger.setLevel(logging.INFO)
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%H:%M'):
@@ -37,8 +58,8 @@ def send_verification_email(email, token):
     msg['Subject'] = 'Verify you email'
     msg['From'] = 'slava@vsteschenko.me'
     msg['To'] = email
-    # msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
-    msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
+    msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
+    # msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
 
     with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
         server.starttls()
@@ -256,10 +277,12 @@ def login():
         email = request.form['email']
         password = request.form['password']
         if not email or not password:
-            return redirect(url_for('login'))
+            app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email}')
+            return render_template('login.html')
         
         if not email_validator(email):
             error = 'Invalid email'
+            app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email}')
             return render_template('signup.html', error=error)
         
         cur = get_db().cursor()
@@ -269,11 +292,13 @@ def login():
 
         if not user:
             error = "User with this email doesn't exist"
+            app.logger.warning(f'Failed login attempt - User not found. Email: {email}')
             return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             if user[1] == 0:
                 error = 'Please verify your email'
+                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
                 return render_template('login.html', error=error)
             current_year = datetime.now().year
             current_month = datetime.now().month
@@ -282,6 +307,7 @@ def login():
             return render_template('index.html', current_day=current_day, current_month=current_month, current_year=current_year)
         else:
             error = 'Invalid email or password'
+            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email}')
             return render_template('login.html', error=error)
     return render_template('login.html')
 
