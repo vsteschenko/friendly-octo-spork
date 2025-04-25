@@ -4,6 +4,9 @@ import os, sqlite3, bcrypt
 from datetime import datetime
 from calendar import monthrange
 from email_validator import validate_email,EmailNotValidError
+import secrets
+import smtplib
+from email.message import EmailMessage
 
 load_dotenv()
 DATABASE = os.getenv("DATABASE")
@@ -28,6 +31,22 @@ def email_validator(email):
         return True
     except EmailNotValidError:
         return False
+
+def send_verification_email(email, token):
+    msg = EmailMessage()
+    msg['Subject'] = 'Verify you email'
+    msg['From'] = 'slava@vsteschenko.me'
+    msg['To'] = email
+    # msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
+    msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
+
+    with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
+        server.starttls()
+        server.login('8ab566001@smtp-brevo.com', os.getenv("SMTP_PASSWORD"))
+        server.send_message(msg)
+
+def generate_token():
+    return secrets.token_urlsafe(32)
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -206,17 +225,25 @@ def signup():
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(bytes, salt)
 
+        #verification token
+        verification_token = generate_token()
+
+        #is verified
+        is_verified = 0
+
         cur = get_db().cursor()
         cur.execute("SELECT * FROM users WHERE email = ?", (email,))
         check = cur.fetchone()
         
         if check is None:
-            cur.execute("INSERT INTO users(email, password) VALUES(?,?)",(email,hash,))
+            cur.execute("INSERT INTO users(email, password, is_verified, verification_token) VALUES(?,?,?,?)",(email,hash,is_verified,verification_token))
             get_db().commit()
             cur.close()
-            
-            session['email'] = email
-            return redirect(url_for('index'))
+
+            send_verification_email(email, verification_token)
+            error = 'Please verify your email'
+            # session['email'] = email
+            return render_template('login.html', error=error)
         else:
             cur.close()
             error='User with this email already exist'
@@ -236,17 +263,23 @@ def login():
             return render_template('signup.html', error=error)
         
         cur = get_db().cursor()
-        cur.execute("SELECT password FROM users WHERE email = ?", (email,))
+        cur.execute("SELECT password, is_verified FROM users WHERE email = ?", (email,))
         user = cur.fetchone()
         cur.close()
 
         if not user:
-            error = 'Invalid email or password'
+            error = "User with this email doesn't exist"
             return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
+            if user[1] == 0:
+                error = 'Please verify your email'
+                return render_template('login.html', error=error)
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            current_day = datetime.now().day
             session['email'] = email
-            return redirect(url_for('index'))
+            return render_template('index.html', current_day=current_day, current_month=current_month, current_year=current_year)
         else:
             error = 'Invalid email or password'
             return render_template('login.html', error=error)
@@ -256,3 +289,28 @@ def login():
 def logout():
     session.pop('email', None)
     return redirect(url_for('login'))
+
+@app.route('/verify')
+def verify():
+    token = request.args.get('token')
+
+    if not token:
+        return "Invalid verification link.", 400
+
+    cur = get_db().cursor()
+    cur.execute("SELECT id, is_verified FROM users WHERE verification_token = ?", (token,))
+    user = cur.fetchone()
+
+    if user:
+        user_id, is_verified = user
+        if is_verified:
+            message = "Email already verified."
+        else:
+            cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?", (user_id,))
+            get_db().commit()
+            message = "Email verified successfully!"
+        cur.close()
+        return render_template("verification_email.html", message=message)
+    else:
+        cur.close()
+        return "Invalid or expired verification token.", 404
