@@ -6,3 +6,4 @@ finance_app.db
 .env
 venv
 friendly-octo-spork.db
+app.log

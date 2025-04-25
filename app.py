@@ -5,8 +5,8 @@ from datetime import datetime
 from calendar import monthrange
 from email_validator import validate_email,EmailNotValidError
 import secrets
-import smtplib
-from email.message import EmailMessage
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -53,18 +53,37 @@ def email_validator(email):
     except EmailNotValidError:
         return False
 
-def send_verification_email(email, token):
-    msg = EmailMessage()
-    msg['Subject'] = 'Verify you email'
-    msg['From'] = 'slava@vsteschenko.me'
-    msg['To'] = email
-    # msg.set_content(f"Hi! Verify your email here: http://127.0.0.1:5000/verify?token={token}")
-    msg.set_content(f"Hi! Verify your email here: https://ledger.vsteschenko.me/verify?token={token}")
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
-    with smtplib.SMTP('smtp-relay.brevo.com', 587) as server:
-        server.starttls()
-        server.login(os.getenv("SMTP_LOGIN"), os.getenv("SMTP_PASSWORD"))
-        server.send_message(msg)
+# <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
+def send_verification_email(email, token):
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    subject = "Verify your email"
+    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    to = [{"email": email}]
+    html_content = f"""
+    <html>
+      <body>
+        <p>Hi!</p>
+        <p>Verify your email by clicking the link below:</p>
+        # <!-- <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a> -->
+      </body>
+    </html>
+    """
+
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=to,
+        sender=sender,
+        subject=subject,
+        html_content=html_content,
+    )
+
+    try:
+        response = api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Verification email sent to {email}. Message ID: {response.message_id}")
+    except ApiException as e:
+        app.logger.error(f"Failed to send verification email: {e}")
 
 def generate_token():
     return secrets.token_urlsafe(32)
@@ -261,6 +280,7 @@ def signup():
             get_db().commit()
             cur.close()
 
+            app.logger.info(f"New user created: {email}")
             send_verification_email(email, verification_token)
             error = 'Please verify your email'
             # session['email'] = email
