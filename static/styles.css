@@ -210,6 +210,9 @@ body {
     font-size: 1rem;
     cursor: pointer;
   }
+  .submitBtn:hover {
+    background-color: #0056b3;
+  }
   #datePicker {
     width: 70px;
   }

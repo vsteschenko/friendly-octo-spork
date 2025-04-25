@@ -27,17 +27,17 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-def get_user_id(username):
+def get_user_id(email):
     cur = get_db().cursor()
-    cur.execute("SELECT id FROM users WHERE username = ?",(username,))
+    cur.execute("SELECT id FROM users WHERE email = ?",(email,))
     user_id = cur.fetchone()
     return user_id
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    if 'username' in session:
-        username = session["username"]
-        user_id = get_user_id(username)[0]
+    if 'email' in session:
+        email = session["email"]
+        user_id = get_user_id(email)[0]
 
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -132,11 +132,11 @@ def index():
 
 @app.route('/expenses_by_category')
 def expenses_by_category():
-    if 'username' not in session:
+    if 'email' not in session:
         return jsonify({"error": "Not logged in"}), 401
 
-    username = session["username"]
-    user_id = get_user_id(username)[0]
+    email = session["email"]
+    user_id = get_user_id(email)[0]
 
     try:
         current_year = int(request.args.get('year'))
@@ -166,9 +166,9 @@ def expenses_by_category():
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
-    if 'username' not in session:
+    if 'email' not in session:
         return {'error': 'Not logged in'}, 401
-    if 'username' in session:
+    if 'email' in session:
         current_year = request.form.get('year')
         current_month = request.form.get('month')
         current_day = request.form.get('day')
@@ -183,10 +183,10 @@ def delete_tx():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form['username'].lower()
+        email = request.form['email'].lower()
         password = request.form['password']
-        if not username or not password:
-            error='Username and Password missing'
+        if not email or not password:
+            error='email and Password missing'
             return render_template('signup.html', error=error)
         #encrypt password
         bytes = password.encode('utf-8')
@@ -194,15 +194,15 @@ def signup():
         hash = bcrypt.hashpw(bytes, salt)
 
         cur = get_db().cursor()
-        cur.execute("SELECT * FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT * FROM users WHERE email = ?", (email,))
         check = cur.fetchone()
         
         if check is None:
-            cur.execute("INSERT INTO users(username, password) VALUES(?,?)",(username,hash,))
+            cur.execute("INSERT INTO users(email, password) VALUES(?,?)",(email,hash,))
             get_db().commit()
             cur.close()
             
-            session['username'] = username
+            session['email'] = email
             return redirect(url_for('index'))
         else:
             cur.close()
@@ -213,29 +213,29 @@ def signup():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
-        if not username or not password:
+        if not email or not password:
             return redirect(url_for('login'))
         
         cur = get_db().cursor()
-        cur.execute("SELECT password FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT password FROM users WHERE email = ?", (email,))
         user = cur.fetchone()
         cur.close()
 
         if not user:
-            error = 'Invalid username or password'
+            error = 'Invalid email or password'
             return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
-            session['username'] = username
+            session['email'] = email
             return redirect(url_for('index'))
         else:
-            error = 'Invalid username or password'
+            error = 'Invalid email or password'
             return render_template('login.html', error=error)
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('username', None)
+    session.pop('email', None)
     return redirect(url_for('login'))
