@@ -237,15 +237,15 @@ def delete_tx():
     if 'email' not in session:
         return render_template('login.html')
     if 'email' in session:
-        current_year = request.form.get('year')
-        current_month = request.form.get('month')
-        current_day = request.form.get('day')
+        email = session["email"]
+        client_ip = request.remote_addr
         tx_id = request.form['tx_id']
         cur = get_db().cursor()
         cur.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
         get_db().commit()
         cur.close()
-        return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
+        app.logger.info(f'{email} -- IP: {client_ip} -- deleted transaction {tx_id}')
+        return redirect(url_for('index'))
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -254,7 +254,7 @@ def signup():
         email = request.form['email'].lower()
         password = request.form['password']
         if not email or not password:
-            error='email and Password missing'
+            error='email and password missing'
             return render_template('signup.html', error=error)
         
         if not email_validator(email):
@@ -283,9 +283,6 @@ def signup():
 
             app.logger.info(f"New user created: {email}")
             send_verification_email(email, verification_token)
-            error = 'Please verify your email'
-            # session['email'] = email
-            # return render_template('login.html', error=error)
             return redirect(url_for('login'))
         else:
             cur.close()
@@ -298,13 +295,15 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        client_ip = request.remote_addr
+
         if not email or not password:
-            app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email}')
+            app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email} -- IP: {client_ip}')
             return render_template('login.html')
         
         if not email_validator(email):
             error = 'Invalid email'
-            app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email}')
+            app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email} -- IP: {client_ip}')
             return render_template('signup.html', error=error)
         
         cur = get_db().cursor()
@@ -314,30 +313,29 @@ def login():
 
         if not user:
             error = "User with this email doesn't exist"
-            app.logger.warning(f'Failed login attempt - User not found. Email: {email}')
+            app.logger.warning(f'Failed login attempt - User not found. Email: {email} -- IP: {client_ip}')
             return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             if user[1] == 0:
                 error = 'Please verify your email'
-                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
+                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email} -- IP: {client_ip}')
                 return render_template('login.html', error=error)
-            # current_year = datetime.now().year
-            # current_month = datetime.now().month
-            # current_day = datetime.now().day
-            # session['email'] = email
-            # return render_template('index.html', current_day=current_day, current_month=current_month, current_year=current_year)
             session['email'] = email
+            app.logger.info(f'{email} -- IP: {client_ip} successfully logged in')
             return redirect(url_for('index'))
         else:
             error = 'Invalid email or password'
-            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email}')
+            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email} -- IP: {client_ip}')
             return render_template('login.html', error=error)
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
+    email = session['email']
+    client_ip = request.remote_addr
     session.pop('email', None)
+    app.logger.info(f'{email}-- IP: {client_ip} -- logged out')
     return render_template('login.html')
 
 @app.route('/verify')
