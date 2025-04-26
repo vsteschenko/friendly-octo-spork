@@ -106,6 +106,7 @@ def index():
     if 'email' in session:
         email = session["email"]
         user_id = get_user_id(email)[0]
+        client_ip = request.remote_addr
 
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -190,8 +191,11 @@ def index():
             if not type or not amount or not user_id or not category:
                 return {'error': 'Something went wrong'}, 401
             cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date, category))
+            tx_id = cur.lastrowid
             get_db().commit()
             cur.close()
+
+            app.logger.info(f'{email} -- IP: {client_ip} -- Added transaction {tx_id}')
 
             return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
         return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
@@ -245,7 +249,12 @@ def delete_tx():
         get_db().commit()
         cur.close()
         app.logger.info(f'{email} -- IP: {client_ip} -- deleted transaction {tx_id}')
-        return redirect(url_for('index'))
+
+        #pass time
+        current_year = request.form.get('year')
+        current_month = request.form.get('month')
+        current_day = request.form.get('day')
+        return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
