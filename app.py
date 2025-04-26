@@ -200,7 +200,7 @@ def index():
             return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
         return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
     else:
-        return render_template('login.html')
+        return redirect(url_for('login'))
 
 @app.route('/expenses_by_category')
 def expenses_by_category():
