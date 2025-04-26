@@ -57,6 +57,7 @@ configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
 # <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
+# <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
 def send_verification_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Verify your email"
@@ -192,10 +193,10 @@ def index():
             get_db().commit()
             cur.close()
 
-            return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
+            return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
         return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
     else:
-        return redirect(url_for('login'))
+        return render_template('login.html')
 
 @app.route('/expenses_by_category')
 def expenses_by_category():
@@ -234,7 +235,7 @@ def expenses_by_category():
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
     if 'email' not in session:
-        return {'error': 'Not logged in'}, 401
+        return render_template('login.html')
     if 'email' in session:
         current_year = request.form.get('year')
         current_month = request.form.get('month')
@@ -245,7 +246,7 @@ def delete_tx():
         get_db().commit()
         cur.close()
         return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
-    return 'You are not logged in'
+    return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -284,7 +285,8 @@ def signup():
             send_verification_email(email, verification_token)
             error = 'Please verify your email'
             # session['email'] = email
-            return render_template('login.html', error=error)
+            # return render_template('login.html', error=error)
+            return redirect(url_for('login'))
         else:
             cur.close()
             error='User with this email already exist'
@@ -320,11 +322,13 @@ def login():
                 error = 'Please verify your email'
                 app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
                 return render_template('login.html', error=error)
-            current_year = datetime.now().year
-            current_month = datetime.now().month
-            current_day = datetime.now().day
+            # current_year = datetime.now().year
+            # current_month = datetime.now().month
+            # current_day = datetime.now().day
+            # session['email'] = email
+            # return render_template('index.html', current_day=current_day, current_month=current_month, current_year=current_year)
             session['email'] = email
-            return render_template('index.html', current_day=current_day, current_month=current_month, current_year=current_year)
+            return redirect(url_for('index'))
         else:
             error = 'Invalid email or password'
             app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email}')
@@ -334,7 +338,7 @@ def login():
 @app.route('/logout')
 def logout():
     session.pop('email', None)
-    return redirect(url_for('login'))
+    return render_template('login.html')
 
 @app.route('/verify')
 def verify():
