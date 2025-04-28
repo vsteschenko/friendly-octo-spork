@@ -26,13 +26,11 @@ handler.setFormatter(formatter)
 
 app.logger.addHandler(handler)
 
-# Optionally, you can also log to the console for development purposes
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 app.logger.addHandler(console_handler)
 
-# Set default logging level
 app.logger.setLevel(logging.INFO)
 
 @app.template_filter('datetimeformat')
@@ -106,7 +104,6 @@ def index():
     if 'email' in session:
         email = session["email"]
         user_id = get_user_id(email)[0]
-        client_ip = request.remote_addr
 
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -191,11 +188,10 @@ def index():
             if not type or not amount or not user_id or not category:
                 return {'error': 'Something went wrong'}, 401
             cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date, category))
-            tx_id = cur.lastrowid
             get_db().commit()
             cur.close()
 
-            app.logger.info(f'{email} -- IP: {client_ip} -- Added transaction {tx_id}')
+            app.logger.info(f'{email} -- Added transaction')
 
             return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
         return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
@@ -234,6 +230,11 @@ def expenses_by_category():
     cur.close()
     categories = [row[0] for row in data]
     amounts = [abs(row[1]) for row in data]
+    total = sum(amounts)
+    if total > 0:
+        amounts = [round(amount * 100 / total, 1) for amount in amounts]
+    else:
+        amounts = [0 for _ in amounts]
     return jsonify({"categories": categories, "amounts": amounts})
 
 @app.route('/delete_tx', methods=['POST'])
@@ -242,13 +243,12 @@ def delete_tx():
         return render_template('login.html')
     if 'email' in session:
         email = session["email"]
-        client_ip = request.remote_addr
         tx_id = request.form['tx_id']
         cur = get_db().cursor()
         cur.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
         get_db().commit()
         cur.close()
-        app.logger.info(f'{email} -- IP: {client_ip} -- deleted transaction {tx_id}')
+        app.logger.info(f'{email} -- deleted transaction {tx_id}')
 
         #pass time
         current_year = request.form.get('year')
@@ -304,15 +304,14 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        client_ip = request.remote_addr
 
         if not email or not password:
-            app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email} -- IP: {client_ip}')
+            app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email}')
             return render_template('login.html')
         
         if not email_validator(email):
             error = 'Invalid email'
-            app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email} -- IP: {client_ip}')
+            app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email}')
             return render_template('signup.html', error=error)
         
         cur = get_db().cursor()
@@ -322,29 +321,28 @@ def login():
 
         if not user:
             error = "User with this email doesn't exist"
-            app.logger.warning(f'Failed login attempt - User not found. Email: {email} -- IP: {client_ip}')
+            app.logger.warning(f'Failed login attempt - User not found. Email: {email}')
             return render_template('login.html', error=error)
 
         if bcrypt.checkpw(password.encode('utf-8'), user[0]):
             if user[1] == 0:
                 error = 'Please verify your email'
-                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email} -- IP: {client_ip}')
+                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
                 return render_template('login.html', error=error)
             session['email'] = email
-            app.logger.info(f'{email} -- IP: {client_ip} successfully logged in')
+            app.logger.info(f'{email} successfully logged in')
             return redirect(url_for('index'))
         else:
             error = 'Invalid email or password'
-            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email} -- IP: {client_ip}')
+            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email}')
             return render_template('login.html', error=error)
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     email = session['email']
-    client_ip = request.remote_addr
     session.pop('email', None)
-    app.logger.info(f'{email}-- IP: {client_ip} -- logged out')
+    app.logger.info(f'{email} -- logged out')
     return render_template('login.html')
 
 @app.route('/verify')

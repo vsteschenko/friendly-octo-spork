@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
@@ -51,17 +52,17 @@
       };
     </script>
     <script>
-        function logout() {
-        fetch('/logout', { method: 'GET' })
-            .then((response) => {
+      function logout() {
+        fetch("/logout", { method: "GET" })
+          .then((response) => {
             if (response.ok) {
-                window.location.href = '/login';
+              window.location.href = "/login";
             } else {
-                console.error('Error');
+              console.error("Error");
             }
-            })
-            .catch((error) => console.error('Error:', error));
-        }
+          })
+          .catch((error) => console.error("Error:", error));
+      }
     </script>
     <script>
       function loadExpenseChart() {
@@ -104,9 +105,18 @@
                     // position: "bottom"
                     display: false,
                   },
+                datalabels: {
+                  color: '#fff',
+                  font: {
+                    weight: 'bold',
+                    size: 14,
+                  },
+                  formatter: (value, context) => {
+                    return value.toFixed(1) + '%';
+                  },
                 },
-              },
-              plugins: [centerTextPlugin],
+              }},
+              plugins: [centerTextPlugin,ChartDataLabels],
             });
           })
           .catch((error) => console.error("Error loading chart data:", error));
@@ -242,7 +252,9 @@
       </div>
       <div class="buttons">
         <button onclick="allEntries()" id="buttonsMargin">Transactions</button>
-        <button onclick="sumByCategory()" id="buttonsMargin">Sum By Category</button>
+        <button onclick="sumByCategory()" id="buttonsMargin">
+          Sum By Category
+        </button>
         <button>Report</button>
       </div>
     </div>
