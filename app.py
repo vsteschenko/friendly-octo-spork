@@ -230,12 +230,13 @@ def expenses_by_category():
     cur.close()
     categories = [row[0] for row in data]
     amounts = [abs(row[1]) for row in data]
+    real_amounts = amounts
     total = sum(amounts)
     if total > 0:
         amounts = [round(amount * 100 / total, 1) for amount in amounts]
     else:
         amounts = [0 for _ in amounts]
-    return jsonify({"categories": categories, "amounts": amounts})
+    return jsonify({"categories": categories, "amounts": amounts, "real_amounts": real_amounts})
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():

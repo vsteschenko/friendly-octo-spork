@@ -95,6 +95,7 @@
                       "brown",
                     ],
                     borderWidth: 1,
+                    realAmounts: data.real_amounts,
                   },
                 ],
               },
@@ -113,6 +114,14 @@
                   },
                   formatter: (value, context) => {
                     return value.toFixed(1) + '%';
+                  },
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      const realAmount = context.dataset.realAmounts[context.dataIndex];
+                      return `${realAmount.toFixed(2)} €`; // <-- Показывает сумму в € при наведении
+                    },
                   },
                 },
               }},
