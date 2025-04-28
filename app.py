@@ -143,7 +143,7 @@ def index():
 
         cur = get_db().cursor()
         cur.execute("""
-            SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp, transactions.category 
+            SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp, transactions.category, transactions.place
             FROM transactions JOIN users ON transactions.user_id=users.id 
             WHERE users.id = ? AND transactions.timestamp BETWEEN ? AND ?
             """, (user_id, start_of_day, end_of_day))
@@ -167,6 +167,9 @@ def index():
 
         if request.method == 'POST':
             type = request.form['type']
+            place = request.form['place']
+            if len(place) > 100:
+                return {'error': 'Name of the place is too long'}
 
             # get category
             if type == 'expense':
@@ -186,8 +189,8 @@ def index():
                 transaction_date = datetime(current_year, current_month, current_day, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
 
             if not type or not amount or not user_id or not category:
-                return {'error': 'Something went wrong'}, 401
-            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category) VALUES(?,?,?,?,?)",(type, amount, user_id, transaction_date, category))
+                return {'error': 'Select category'}, 401
+            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place) VALUES(?,?,?,?,?,?)",(type, amount, user_id, transaction_date, category, place))
             get_db().commit()
             cur.close()
 

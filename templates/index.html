@@ -120,7 +120,7 @@
                   callbacks: {
                     label: function (context) {
                       const realAmount = context.dataset.realAmounts[context.dataIndex];
-                      return `${realAmount.toFixed(2)} €`; // <-- Показывает сумму в € при наведении
+                      return `${realAmount.toFixed(2)} €`;
                     },
                   },
                 },
@@ -272,11 +272,12 @@
       <div id="tx"><b>Transactions</b></div>
       {% for tx in txs %}
       <div class="tx">
-        {{ tx[0] }} {{ tx[4] }} {{ tx[3] | datetimeformat('%H:%M') }}
+        {{ tx[0] }} {{ tx[4] }} {{ tx[5] }} {{ tx[3] | datetimeformat('%H:%M') }}
         <form
           method="POST"
           action="{{ url_for('delete_tx', tx_id=tx[2]) }}"
           style="display: inline"
+          class="delete"
         >
           <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
           <input type="hidden" name="year" value="{{ current_year }}" />
@@ -346,6 +347,7 @@
             min="0.01"
             required
           />
+          <input type="text" name="place" placeholder="Where did the transaction happen?" maxlength="100" />
 
           <div id="expense-options" style="display: none">
             <select name="expense-category" required>

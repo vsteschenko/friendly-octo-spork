@@ -74,6 +74,7 @@ body {
     height: calc(100vh - 50px - 80px);
     margin-bottom: 80px;
     div {
+        margin-left: 10px;
         padding: 5px;
         display: flex;
         flex-direction: row;
@@ -83,8 +84,12 @@ body {
 .tx:hover {
     background-color: rgb(235, 233, 233);
 }
+.delete {
+  margin-right: 10px;
+}
 .sumByCategory {
     display: none;
+    overflow-y: auto;
     flex-direction: column;
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
@@ -92,6 +97,7 @@ body {
     height: calc(100vh - 50px - 80px);
     margin-bottom: 80px;
     div {
+        margin-left: 10px;
         padding: 5px;
         display: flex;
         flex-direction: column;
