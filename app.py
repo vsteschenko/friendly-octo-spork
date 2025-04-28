@@ -243,8 +243,6 @@ def expenses_by_category():
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
-    if 'email' not in session:
-        return render_template('login.html')
     if 'email' in session:
         email = session["email"]
         tx_id = request.form['tx_id']
@@ -254,12 +252,51 @@ def delete_tx():
         cur.close()
         app.logger.info(f'{email} -- deleted transaction {tx_id}')
 
-        #pass time
         current_year = request.form.get('year')
         current_month = request.form.get('month')
         current_day = request.form.get('day')
         return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
-    return render_template('login.html')
+    return redirect(url_for('login'))
+
+@app.route('/update_tx', methods=['POST'])
+def update_tx():
+    if 'email' in session:
+        email = session['email']
+        user_id = get_user_id(email)[0]
+        tx_id = request.form['tx_id']
+        type = request.form['type']
+        place = request.form['place']
+        amount = request.form['amount']
+        category = request.form['category']
+
+        # Проверка данных
+        if not tx_id or not type or not place or not amount or not category:
+            return {'error': 'All fields are required'}, 400
+        if len(place) > 100:
+            return {'error': 'Place name is too long'}, 400
+        try:
+            amount = float(amount)
+        except ValueError:
+            return {'error': 'Invalid amount'}, 400
+
+        cur = get_db().cursor()
+
+        # Check whether such tx exists
+        cur.execute("SELECT id FROM transactions WHERE id = ? AND user_id = ?", (tx_id, user_id))
+        if not cur.fetchone():
+            return {'error': 'Transaction not found or access denied'}, 404
+
+        cur.execute("""
+            UPDATE transactions
+            SET type = ?, place = ?, amount = ?, category = ?
+            WHERE id = ? AND user_id = ?
+        """, (type, place, amount, category, tx_id, user_id))
+        get_db().commit()
+        cur.close()
+
+        app.logger.info(f'{email} -- updated transaction {tx_id}')
+        return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():

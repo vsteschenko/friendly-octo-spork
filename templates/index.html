@@ -26,7 +26,67 @@
           document.getElementById("expense-options").style.display = "inline";
         }
       }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const editButtons = document.querySelectorAll(".edit-btn");
+        const modal = document.getElementById("txModal");
+
+        editButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+
+            const txId = button.getAttribute("data-tx-id");
+            const txType = button.getAttribute("data-tx-type");
+            const txPlace = button.getAttribute("data-tx-place");
+            const txAmount = button.getAttribute("data-tx-amount");
+            const txCategory = button.getAttribute("data-tx-category");
+
+
+            document.getElementById("txForm").action = "/update_tx"; // Указываем URL для обновления
+            document.getElementById("txType").value = txType;
+            document.querySelector("input[name='amount']").value = txAmount;
+            document.querySelector("input[name='place']").value = txPlace;
+
+            if (txType === "expense") {
+              document.getElementById("expense-options").style.display =
+                "inline";
+              document.getElementById("income-options").style.display = "none";
+              document.querySelector("select[name='expense-category']").value =
+                txCategory;
+            } else if (txType === "income") {
+              document.getElementById("income-options").style.display =
+                "inline";
+              document.getElementById("expense-options").style.display = "none";
+              document.querySelector("select[name='income-category']").value =
+                txCategory;
+            }
+
+            modal.classList.remove("hidden");
+          });
+        });
+
+        document.querySelector(".close-btn").onclick = () => {
+          modal.classList.add("hidden");
+        };
+
+        window.onclick = (event) => {
+          if (event.target === modal) {
+            modal.classList.add("hidden");
+          }
+        };
+      });
     </script>
+    <!-- <script>
+      function updateCategory() {
+        const txType = document.querySelector("input[name='type']").value;
+        const categoryField = document.getElementById("txCategory");
+
+        if (txType === "expense") {
+          categoryField.value = document.getElementById("expenseCategory").value;
+        } else if (txType === "income") {
+          categoryField.value = document.getElementById("incomeCategory").value;
+        }
+      }
+    </script> -->
     <script>
       const centerTextPlugin = {
         id: "centerText",
@@ -106,26 +166,28 @@
                     // position: "bottom"
                     display: false,
                   },
-                datalabels: {
-                  color: '#fff',
-                  font: {
-                    weight: 'bold',
-                    size: 14,
+                  datalabels: {
+                    color: "#fff",
+                    font: {
+                      weight: "bold",
+                      size: 14,
+                    },
+                    formatter: (value, context) => {
+                      return value.toFixed(1) + "%";
+                    },
                   },
-                  formatter: (value, context) => {
-                    return value.toFixed(1) + '%';
-                  },
-                },
-                tooltip: {
-                  callbacks: {
-                    label: function (context) {
-                      const realAmount = context.dataset.realAmounts[context.dataIndex];
-                      return `${realAmount.toFixed(2)} €`;
+                  tooltip: {
+                    callbacks: {
+                      label: function (context) {
+                        const realAmount =
+                          context.dataset.realAmounts[context.dataIndex];
+                        return `${realAmount.toFixed(2)} €`;
+                      },
                     },
                   },
                 },
-              }},
-              plugins: [centerTextPlugin,ChartDataLabels],
+              },
+              plugins: [centerTextPlugin, ChartDataLabels],
             });
           })
           .catch((error) => console.error("Error loading chart data:", error));
@@ -135,19 +197,19 @@
     <script>
       function sumByCategory() {
         const element = document.getElementsByClassName("sumByCategory")[0];
-        const elementTxs = document.getElementsByClassName("txs")[0];
+        const elementTxs = document.getElementsByClassName("table")[0];
         if (element.style.display === "none" || element.style.display === "") {
-          element.style.display = "flex";
+          element.style.display = "block";
           elementTxs.style.display = "none";
         }
       }
     </script>
     <script>
       function allEntries() {
-        const element = document.getElementsByClassName("txs")[0];
+        const element = document.getElementsByClassName("table")[0];
         const elementCat = document.getElementsByClassName("sumByCategory")[0];
         if (element.style.display === "none" || element.style.display === "") {
-          element.style.display = "flex";
+          element.style.display = "block";
           elementCat.style.display = "none";
         }
       }
@@ -267,62 +329,104 @@
         <button>Report</button>
       </div>
     </div>
-    <br />
-    <div class="txs">
-      <div id="tx"><b>Transactions</b></div>
-      {% for tx in txs %}
-      <div class="tx">
-        {{ tx[0] }} {{ tx[4] }} {{ tx[5] }} {{ tx[3] | datetimeformat('%H:%M') }}
-        <form
-          method="POST"
-          action="{{ url_for('delete_tx', tx_id=tx[2]) }}"
-          style="display: inline"
-          class="delete"
-        >
-          <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
-          <input type="hidden" name="year" value="{{ current_year }}" />
-          <input type="hidden" name="month" value="{{ current_month }}" />
-          <input type="hidden" name="day" value="{{ current_day }}" />
-          <button
-            type="submit"
-            style="
-              all: unset;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 20px;
-              height: 20px;
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              width="20"
-              height="20"
+    <div class="table">
+      <table>
+        <th>tx</th>
+        <th>category</th>
+        <th>place</th>
+        <th>time</th>
+        <th></th>
+        <th></th>
+        {% for tx in txs %}
+        <tr>
+          <td>{{ tx[0] }}</td>
+          <td>{{ tx[4] }}</td>
+          <td>{{ tx[5] }}</td>
+          <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
+          <!-- <td class="edit">
+            <form method="POST" action="{{ url_for('update_tx') }}">
+              <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
+              <input type="hidden" name="type" value="{{ tx[1] }}" />
+              <input type="hidden" name="place" value="{{ tx[5] }}" />
+              <input type="hidden" name="amount" value="{{ tx[0] }}" />
+              <input type="hidden" name="category" шв="txCategory" />
+              <button
+                type="button"
+                class="edit-btn"
+                data-tx-id="{{ tx[2] }}"
+                data-tx-type="{{ tx[1] }}"
+                data-tx-place="{{ tx[5] }}"
+                data-tx-amount="{{ tx[0] }}"
+                data-tx-category="{{ tx[4] }}"
+              >
+                edit
+              </button>
+            </form>
+          </td> -->
+          <td><button>edit</button></td>
+          <td class="delete">
+            <form
+              method="POST"
+              action="{{ url_for('delete_tx', tx_id=tx[2]) }}"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-              />
-            </svg>
-          </button>
-        </form>
-      </div>
-      {% endfor %}
+              <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
+              <input type="hidden" name="year" value="{{ current_year }}" />
+              <input type="hidden" name="month" value="{{ current_month }}" />
+              <input type="hidden" name="day" value="{{ current_day }}" />
+              <button
+                type="submit"
+                style="
+                  all: unset;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 20px;
+                  height: 20px;
+                "
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  width="20"
+                  height="20"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                  />
+                </svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
     </div>
 
     <div class="sumByCategory">
-      <div id="tx"><b>Categories</b></div>
+      <!-- <div id="tx"><b>Categories</b></div>
       <div>
         {% for line in sum_by_categories %}
         <div>{{ line[0] }} {{ line[1]}}</div>
         {% endfor %}
-      </div>
+      </div> -->
+      <table>
+        <tr>
+          <th>category</th>
+          <th>total</th>
+        </tr>
+        {% for line in sum_by_categories %}
+        <tr>
+          <td>{{ line[0] }}</td>
+          <td>{{ line[1] }}</td>
+        </tr>
+        {% endfor %}
+      </table>
     </div>
 
     <div class="actions">
@@ -335,6 +439,7 @@
         <span class="close-btn">&times;</span>
         <h2>New Transaction</h2>
         <form method="post" id="txForm">
+          <input type="hidden" name="tx_id" id="txId" />
           <input type="hidden" name="year" value="{{ current_year }}" />
           <input type="hidden" name="month" value="{{ current_month }}" />
           <input type="hidden" name="day" value="{{ current_day }}" />
@@ -347,7 +452,12 @@
             min="0.01"
             required
           />
-          <input type="text" name="place" placeholder="Where did the transaction happen?" maxlength="100" />
+          <input
+            type="text"
+            name="place"
+            placeholder="Where did the transaction happen?"
+            maxlength="100"
+          />
 
           <div id="expense-options" style="display: none">
             <select name="expense-category" required>

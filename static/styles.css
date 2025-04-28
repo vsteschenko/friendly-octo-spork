@@ -38,7 +38,7 @@ body {
         justify-content: center;
         align-items: center;
         position: relative;
-        margin: 10px;
+        margin: 10px 0px;
         form {
             display: flex;
             flex-direction: row;
@@ -62,32 +62,55 @@ body {
     width: 200px !important;
     height: 200px !important;
 }
-#tx {
-    border-bottom: 1px solid rgb(235, 233, 233);
+/* TABLE */
+.table {
+  margin: 10px 0px;
+  overflow-y: auto;
+  height: calc(100vh - 50px - 80px);
+  border: 1px solid rgb(235, 233, 233);
+  border-radius: 15px;
+  width: 100%;
+  margin-bottom: 70px;
 }
-.txs {
-    overflow-y: auto;
-    flex-direction: column;
-    border: 1px solid rgb(235, 233, 233);
-    border-radius: 15px;
-    width: 100%;
-    height: calc(100vh - 50px - 80px);
-    margin-bottom: 80px;
-    div {
-        margin-left: 10px;
-        padding: 5px;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-    }
+table {
+  border-collapse: collapse;
+  width: 100%;
 }
-.tx:hover {
-    background-color: rgb(235, 233, 233);
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgb(235, 233, 233);
 }
-.delete {
-  margin-right: 10px;
+
+th {
+  background-color: #f1f1f1;
 }
+
+tr:hover {
+  background-color: rgb(235, 233, 233);
+}
+
+.delete-btn {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.delete-btn svg {
+  stroke: #007bff;
+}
+
+.delete-btn:hover svg {
+  stroke: #0056b3;
+}
+
 .sumByCategory {
+    margin:10px;
     display: none;
     overflow-y: auto;
     flex-direction: column;
@@ -225,6 +248,9 @@ body {
 
   @media (min-width: 768px) {
     .txs {
+      max-width: 600px;
+    }
+    .table {
       max-width: 600px;
     }
     .sumByCategory {
