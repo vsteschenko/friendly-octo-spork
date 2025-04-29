@@ -267,9 +267,14 @@ def update_tx():
         type = request.form['type']
         place = request.form['place']
         amount = request.form['amount']
-        category = request.form['category']
 
-        # Проверка данных
+        if type == 'expense':
+            category = request.form.get('expense-category')
+            amount = -float(amount)
+        elif type == 'income':
+            category = request.form.get('income-category')
+            amount = float(amount)
+
         if not tx_id or not type or not place or not amount or not category:
             return {'error': 'All fields are required'}, 400
         if len(place) > 100:
@@ -295,7 +300,12 @@ def update_tx():
         cur.close()
 
         app.logger.info(f'{email} -- updated transaction {tx_id}')
-        return redirect(url_for('index'))
+
+        current_year = request.form.get('year')
+        current_month = request.form.get('month')
+        current_day = request.form.get('day')
+
+        return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
     return redirect(url_for('login'))
 
 @app.route('/signup', methods=['GET', 'POST'])
