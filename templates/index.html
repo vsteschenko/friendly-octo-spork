@@ -101,7 +101,7 @@
             let txAmount = button.getAttribute("data-tx-amount");
             txAmount = Math.abs(txAmount);
             const txCategory = button.getAttribute("data-tx-category");
-            const txTime = button.getAttribute("data-tx-time")
+            const txTime = button.getAttribute("data-tx-time");
 
             const txForm = document.getElementById("txForm");
             txForm.action = "/update_tx";
@@ -183,6 +183,29 @@
           .catch((error) => console.error("Error:", error));
       }
 
+      const categoryColors = {
+        grocery: "#FF6384",
+        rent: "#36A2EB",
+        utilities: "#FFCE56",
+        transport: "#4BC0C0",
+        insurance: "#9966FF",
+        dining: "#FF9F40",
+        entertainment: "#C9CBCF",
+        shopping: "#F67019",
+        health: "#00A950",
+        beauty: "#FF6B6B",
+        loans: "#A0522D",
+        credit_card: "#4682B4",
+        savings: "#32CD32",
+        education: "#8A2BE2",
+        pets: "#DAA520",
+        home_maintenance: "#708090",
+        gifts: "#D2691E",
+        travel: "#20B2AA",
+        subscriptions: "#E9967A",
+        other: "#B0C4DE",
+      };
+
       function loadExpenseChart() {
         fetch(
           `/expenses_by_category?year={{ current_year }}&month={{ current_month }}&day={{ current_day }}`
@@ -193,6 +216,11 @@
               .getElementById("expenseChart")
               .getContext("2d");
 
+            const labels = data.categories;
+            const backgroundColors = labels.map(
+              (category) => categoryColors[category] || "#cccccc"
+            );
+
             new Chart(ctx, {
               type: "doughnut",
               data: {
@@ -201,17 +229,7 @@
                   {
                     // label: "Expenses by Category",
                     data: data.amounts,
-                    backgroundColor: [
-                      "red",
-                      "blue",
-                      "green",
-                      "yellow",
-                      "purple",
-                      "orange",
-                      "pink",
-                      "cyan",
-                      "brown",
-                    ],
+                    backgroundColor: backgroundColors,
                     borderWidth: 1,
                     realAmounts: data.real_amounts,
                   },
@@ -304,7 +322,6 @@
             />
           </svg>
         </button>
-
         <input type="text" id="datePicker" placeholder="Select a date" />
         <button
           type="submit"
