@@ -17,6 +17,68 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
+      function setCurrentTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        document.getElementById("tx_time").value = `${hours}:${minutes}`;
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("spendBtn").onclick = () => {
+          document.getElementById("txModal").classList.remove("hidden");
+          document.getElementById("txType").value = "expense";
+          showOptions("expense");
+          document.getElementsByClassName("saveBtn")[0].style.display = "none";
+          document.getElementsByClassName("submitBtn")[0].style.display =
+            "inline";
+          const txForm = document.getElementById("txForm");
+          txForm.reset();
+          setCurrentTime();
+        };
+
+        document.getElementById("incomeBtn").onclick = () => {
+          document.getElementById("txModal").classList.remove("hidden");
+          document.getElementById("txType").value = "income";
+          showOptions("income");
+          document.getElementByClassName("saveBtn")[0].style.display = "none";
+          document.getElementByClassName("submitBtn")[0].style.display =
+            "inline";
+          const txForm = document.getElementById("txForm");
+          txForm.reset();
+          setCurrentTime();
+        };
+
+        document.querySelector(".close-btn").onclick = () => {
+          document.getElementById("txModal").classList.add("hidden");
+          const txForm = document.getElementById("txForm");
+          txForm.reset();
+        };
+
+        window.onclick = (event) => {
+          const modal = document.getElementById("txModal");
+          if (event.target === modal) {
+            modal.classList.add("hidden");
+            const txForm = document.getElementById("txForm");
+            txForm.reset();
+          }
+        };
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#datePicker", {
+          defaultDate:
+            "{{ current_year }}-{{ '%02d'|format(current_month) }}-{{ '%02d'|format(current_day) }}",
+          dateFormat: "Y-m-d",
+          onChange: function (selectedDates, dateStr, instance) {
+            const selectedDate = selectedDates[0];
+            const year = selectedDate.getFullYear();
+            const month = selectedDate.getMonth() + 1;
+            const day = selectedDate.getDate();
+            window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+          },
+        });
+      });
+
       function showOptions(type) {
         if (type == "income") {
           document.getElementById("income-options").style.display = "inline";
@@ -39,6 +101,7 @@
             let txAmount = button.getAttribute("data-tx-amount");
             txAmount = Math.abs(txAmount);
             const txCategory = button.getAttribute("data-tx-category");
+            const txTime = button.getAttribute("data-tx-time")
 
             const txForm = document.getElementById("txForm");
             txForm.action = "/update_tx";
@@ -47,6 +110,7 @@
             txForm.querySelector("input[name='type']").value = txType;
             txForm.querySelector("input[name='amount']").value = txAmount;
             txForm.querySelector("input[name='place']").value = txPlace;
+            txForm.querySelector("input[name='tx_time']").value = txTime;
 
             if (txType === "expense") {
               document.getElementById("expense-options").style.display =
@@ -353,6 +417,7 @@
                 data-tx-place="{{ tx[5] }}"
                 data-tx-amount="{{ tx[0] }}"
                 data-tx-category="{{ tx[4] }}"
+                data-tx-time="{{ tx[3] | datetimeformat('%H:%M') }}"
               >
                 edit
               </button>
@@ -507,61 +572,5 @@
         </form>
       </div>
     </div>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("spendBtn").onclick = () => {
-          document.getElementById("txModal").classList.remove("hidden");
-          document.getElementById("txType").value = "expense";
-          showOptions("expense");
-          document.getElementsByClassName("saveBtn")[0].style.display = "none";
-          document.getElementsByClassName("submitBtn")[0].style.display =
-            "inline";
-          const txForm = document.getElementById("txForm");
-          txForm.reset();
-        };
-
-        document.getElementById("incomeBtn").onclick = () => {
-          document.getElementById("txModal").classList.remove("hidden");
-          document.getElementById("txType").value = "income";
-          showOptions("income");
-          document.getElementByClassName("saveBtn")[0].style.display = "none";
-          document.getElementByClassName("submitBtn")[0].style.display =
-            "inline";
-          const txForm = document.getElementById("txForm");
-          txForm.reset();
-        };
-
-        document.querySelector(".close-btn").onclick = () => {
-          document.getElementById("txModal").classList.add("hidden");
-          const txForm = document.getElementById("txForm");
-          txForm.reset();
-        };
-
-        window.onclick = (event) => {
-          const modal = document.getElementById("txModal");
-          if (event.target === modal) {
-            modal.classList.add("hidden");
-            const txForm = document.getElementById("txForm");
-            txForm.reset();
-          }
-        };
-      });
-
-      document.addEventListener("DOMContentLoaded", function () {
-        flatpickr("#datePicker", {
-          defaultDate:
-            "{{ current_year }}-{{ '%02d'|format(current_month) }}-{{ '%02d'|format(current_day) }}",
-          dateFormat: "Y-m-d",
-          onChange: function (selectedDates, dateStr, instance) {
-            const selectedDate = selectedDates[0];
-            const year = selectedDate.getFullYear();
-            const month = selectedDate.getMonth() + 1;
-            const day = selectedDate.getDate();
-            window.location.href = `/?year=${year}&month=${month}&day=${day}`;
-          },
-        });
-      });
-    </script>
   </body>
 </html>
