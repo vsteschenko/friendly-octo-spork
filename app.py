@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request, redirect, url_for, g, jsonify
+from flask import Flask, render_template, session, request, redirect, url_for, g
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
@@ -170,7 +170,7 @@ def index():
             hour, minute = map(int, time.split(':'))
             transaction_date = datetime(current_year, current_month, current_day, hour, minute)
             if len(place) > 100:
-                return {'error': 'Name of the place is too long'}
+                return {'error': 'Name of the place is too long'}, 404
 
             if type == 'expense':
                 category = request.form.get('expense-category')
@@ -197,7 +197,7 @@ def index():
 @app.route('/expenses_by_category')
 def expenses_by_category():
     if 'email' not in session:
-        return jsonify({"error": "Not logged in"}), 401
+        return {"error": "Not logged in"}, 401
 
     email = session["email"]
     user_id = get_user_id(email)[0]
@@ -230,7 +230,7 @@ def expenses_by_category():
         amounts = [round(amount * 100 / total, 1) for amount in amounts]
     else:
         amounts = [0 for _ in amounts]
-    return jsonify({"categories": categories, "amounts": amounts, "real_amounts": real_amounts})
+    return {"categories": categories, "amounts": amounts, "real_amounts": real_amounts}
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
@@ -390,7 +390,7 @@ def verify():
     token = request.args.get('token')
 
     if not token:
-        return "Invalid verification link.", 400
+        return {"error:":"Invalid verification link."}, 400
 
     cur = get_db().cursor()
     cur.execute("SELECT id, is_verified FROM users WHERE verification_token = ?", (token,))
@@ -408,4 +408,4 @@ def verify():
         return render_template("verification_email.html", message=message)
     else:
         cur.close()
-        return "Invalid or expired verification token.", 404
+        return {"error":"Invalid or expired verification token."}, 404
