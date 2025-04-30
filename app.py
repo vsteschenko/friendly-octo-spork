@@ -232,6 +232,22 @@ def expenses_by_category():
         amounts = [0 for _ in amounts]
     return {"categories": categories, "amounts": amounts, "real_amounts": real_amounts}
 
+@app.route('/report', methods=['GET', 'POST'])
+def report():
+    if 'email' in session:
+        email = session["email"]
+        start = request.args.get('start')
+        end = request.args.get('end')
+        print(f'Start date: {start}, End date: {end}')
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        current_day = datetime.now().day
+
+        # SHOULD BE redirect(url_for)
+
+        return redirect(url_for('index', start=start, end=end, current_month=current_month, current_day=current_day, current_year=current_year))
+    return redirect(url_for('login'))
+
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
     if 'email' in session:

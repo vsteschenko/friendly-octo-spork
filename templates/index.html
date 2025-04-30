@@ -17,12 +17,25 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const savedTab = localStorage.getItem("activeTab");
+
+        if (savedTab === "report") {
+          showReport();
+        } else if (savedTab === "sumByCategory") {
+          sumByCategory();
+        } else {
+          allEntries();
+        }
+      });
+
       function setCurrentTime() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, "0");
         const minutes = String(now.getMinutes()).padStart(2, "0");
         document.getElementById("tx_time").value = `${hours}:${minutes}`;
       }
+
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("spendBtn").onclick = () => {
           document.getElementById("txModal").classList.remove("hidden");
@@ -75,6 +88,32 @@
             const month = selectedDate.getMonth() + 1;
             const day = selectedDate.getDate();
             window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+          },
+        });
+      });
+      document.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#rangeDatePicker", {
+          mode: "range",
+          dateFormat: "Y-m-d",
+          enableTime: false,
+          defaultDate: [
+            "{{ start if start else '' }}",
+            "{{ end if end else '' }}",
+          ].filter(Boolean),
+          onChange: function (selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+              const start = selectedDates[0];
+              const end = selectedDates[1];
+
+              const startStr = `${start.getFullYear()}-${String(
+                start.getMonth() + 1
+              ).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+              const endStr = `${end.getFullYear()}-${String(
+                end.getMonth() + 1
+              ).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+
+              window.location.href = `/report?start=${startStr}&end=${endStr}`;
+            }
           },
         });
       });
@@ -270,21 +309,73 @@
       }
       window.onload = loadExpenseChart;
 
-      function sumByCategory() {
-        const element = document.getElementsByClassName("sumByCategory")[0];
-        const elementTxs = document.getElementsByClassName("table")[0];
-        if (element.style.display === "none" || element.style.display === "") {
-          element.style.display = "block";
-          elementTxs.style.display = "none";
-        }
+      function showReport() {
+        const report = document.getElementsByClassName("report")[0];
+        const table = document.getElementsByClassName("table")[0];
+        const sumByCategory =
+          document.getElementsByClassName("sumByCategory")[0];
+
+        const calendar = document.getElementById("datePicker");
+        const calendarRange = document.getElementById("rangeDatePicker");
+        calendar.style.display = "none";
+        calendarRange.style.display = "inline";
+
+        const previousDayButton = document.getElementById("previousDay");
+        previousDayButton.style.display = "none";
+        const nextDayButton = document.getElementById("nextDay");
+        nextDayButton.style.display = "none";
+
+        report.style.display = "block";
+        table.style.display = "none";
+        sumByCategory.style.display = "none";
+
+        localStorage.setItem("activeTab", "report");
       }
+
+      function sumByCategory() {
+        const report = document.getElementsByClassName("report")[0];
+        const table = document.getElementsByClassName("table")[0];
+        const sumByCategory =
+          document.getElementsByClassName("sumByCategory")[0];
+
+        const calendar = document.getElementById("datePicker");
+        const calendarRange = document.getElementById("rangeDatePicker");
+        calendar.style.display = "inline";
+        calendarRange.style.display = "none";
+
+        const previousDayButton = document.getElementById("previousDay");
+        previousDayButton.style.display = "flex";
+        const nextDayButton = document.getElementById("nextDay");
+        nextDayButton.style.display = "flex";
+
+        report.style.display = "none";
+        table.style.display = "none";
+        sumByCategory.style.display = "block";
+
+        localStorage.setItem("activeTab", "sumByCategory");
+      }
+
       function allEntries() {
-        const element = document.getElementsByClassName("table")[0];
-        const elementCat = document.getElementsByClassName("sumByCategory")[0];
-        if (element.style.display === "none" || element.style.display === "") {
-          element.style.display = "block";
-          elementCat.style.display = "none";
-        }
+        const report = document.getElementsByClassName("report")[0];
+        const table = document.getElementsByClassName("table")[0];
+        const sumByCategory =
+          document.getElementsByClassName("sumByCategory")[0];
+
+        const calendar = document.getElementById("datePicker");
+        const calendarRange = document.getElementById("rangeDatePicker");
+        calendar.style.display = "inline";
+        calendarRange.style.display = "none";
+
+        const previousDayButton = document.getElementById("previousDay");
+        previousDayButton.style.display = "flex";
+        const nextDayButton = document.getElementById("nextDay");
+        nextDayButton.style.display = "flex";
+
+        report.style.display = "none";
+        table.style.display = "block";
+        sumByCategory.style.display = "none";
+
+        localStorage.setItem("activeTab", "allEntries");
       }
     </script>
   </head>
@@ -298,6 +389,7 @@
           name="day"
           value="{{ current_day - 1 }}"
           aria-label="Previous day"
+          id="previousDay"
           style="
             all: unset;
             cursor: pointer;
@@ -322,11 +414,13 @@
             />
           </svg>
         </button>
-        <input type="text" id="datePicker" placeholder="Select a date" />
+        <input type="text" id="datePicker" />
+        <input type="text" id="rangeDatePicker" placeholder="select period" />
         <button
           type="submit"
           name="day"
           value="{{ current_day + 1 }}"
+          id="nextDay"
           style="
             all: unset;
             cursor: pointer;
@@ -397,7 +491,7 @@
         <button onclick="sumByCategory()" id="buttonsMargin">
           Sum By Category
         </button>
-        <button>Report</button>
+        <button onclick="showReport()">Report</button>
       </div>
     </div>
     <div class="table">
@@ -496,6 +590,19 @@
           <td>{{ line[1] }}</td>
         </tr>
         {% endfor %}
+      </table>
+    </div>
+
+    <div class="report">
+      <table>
+        <tr>
+          <th>report</th>
+          <th></th>
+        </tr>
+        <tr>
+          <td>---</td>
+          <td>---</td>
+        </tr>
       </table>
     </div>
 
