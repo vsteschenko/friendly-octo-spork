@@ -16,7 +16,6 @@ DATABASE = os.getenv("DATABASE")
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 
-# Set up logging to file
 log_file = 'app.log'
 handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
 handler.setLevel(logging.INFO)
@@ -109,7 +108,6 @@ def index():
         current_month = datetime.now().month
         current_day = datetime.now().day
 
-        # check parameters
         if 'year' in request.args:
             current_year = int(request.args.get('year'))
 
@@ -168,10 +166,12 @@ def index():
         if request.method == 'POST':
             type = request.form['type']
             place = request.form['place']
+            time = request.form['tx_time']
+            hour, minute = map(int, time.split(':'))
+            transaction_date = datetime(current_year, current_month, current_day, hour, minute)
             if len(place) > 100:
                 return {'error': 'Name of the place is too long'}
 
-            # get category
             if type == 'expense':
                 category = request.form.get('expense-category')
             elif type == 'income':
@@ -181,14 +181,7 @@ def index():
             if type == 'expense':
                 amount = -float(amount)
 
-            now = datetime.now()
-
-            if current_year == now.year and current_month == now.month and current_day == now.day:
-                transaction_date = now.strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                transaction_date = datetime(current_year, current_month, current_day, 12, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
-
-            if not type or not amount or not user_id or not category:
+            if not type or not amount or not user_id or not category or not transaction_date:
                 return {'error': 'Select category'}, 401
             cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place) VALUES(?,?,?,?,?,?)",(type, amount, user_id, transaction_date, category, place))
             get_db().commit()
@@ -209,15 +202,13 @@ def expenses_by_category():
     email = session["email"]
     user_id = get_user_id(email)[0]
 
-    try:
-        current_year = int(request.args.get('year'))
-        current_month = int(request.args.get('month'))
-        current_day = int(request.args.get('day'))
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid date parameters"}), 400
+    current_year = int(request.args.get('year'))
+    current_month = int(request.args.get('month'))
+    current_day = int(request.args.get('day'))
 
-    start_of_day = datetime(current_year, current_month, current_day)
-    end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59)
+    start_of_day = datetime(current_year, current_month, current_day).strftime('%Y-%m-%d %H:%M:%S')
+    end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
+
     cur = get_db().cursor()
     cur.execute("""
         SELECT category, SUM(amount)
@@ -226,8 +217,8 @@ def expenses_by_category():
         GROUP BY category
         """, (
             user_id,
-            start_of_day.strftime('%Y-%m-%d %H:%M:%S'),
-            end_of_day.strftime('%Y-%m-%d %H:%M:%S')
+            start_of_day,
+            end_of_day
         ))
     data = cur.fetchall()
     cur.close()
@@ -267,6 +258,12 @@ def update_tx():
         type = request.form['type']
         place = request.form['place']
         amount = request.form['amount']
+        current_year = int(request.form.get('year'))
+        current_month = int(request.form.get('month'))
+        current_day = int(request.form.get('day'))
+        time = request.form['tx_time']
+        hour, minute = map(int, time.split(':'))
+        transaction_date = datetime(current_year, current_month, current_day, hour, minute)
 
         if type == 'expense':
             category = request.form.get('expense-category')
@@ -275,7 +272,7 @@ def update_tx():
             category = request.form.get('income-category')
             amount = float(amount)
 
-        if not tx_id or not type or not place or not amount or not category:
+        if not tx_id or not type or not place or not amount or not category or not transaction_date:
             return {'error': 'All fields are required'}, 400
         if len(place) > 100:
             return {'error': 'Place name is too long'}, 400
@@ -286,24 +283,19 @@ def update_tx():
 
         cur = get_db().cursor()
 
-        # Check whether such tx exists
         cur.execute("SELECT id FROM transactions WHERE id = ? AND user_id = ?", (tx_id, user_id))
         if not cur.fetchone():
             return {'error': 'Transaction not found or access denied'}, 404
 
         cur.execute("""
             UPDATE transactions
-            SET type = ?, place = ?, amount = ?, category = ?
+            SET type = ?, place = ?, amount = ?, category = ?, timestamp = ?
             WHERE id = ? AND user_id = ?
-        """, (type, place, amount, category, tx_id, user_id))
+        """, (type, place, amount, category, transaction_date, tx_id, user_id))
         get_db().commit()
         cur.close()
 
         app.logger.info(f'{email} -- updated transaction {tx_id}')
-
-        current_year = request.form.get('year')
-        current_month = request.form.get('month')
-        current_day = request.form.get('day')
 
         return redirect(url_for('index', year=current_year, month=current_month, day=current_day))
     return redirect(url_for('login'))
@@ -321,15 +313,12 @@ def signup():
             error = 'Invalid email'
             return render_template('signup.html', error=error)
         
-        #encrypt password
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(bytes, salt)
 
-        #verification token
         verification_token = generate_token()
 
-        #is verified
         is_verified = 0
 
         cur = get_db().cursor()
