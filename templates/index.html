@@ -99,7 +99,7 @@
           defaultDate: [
             "{{ start if start else '' }}",
             "{{ end if end else '' }}",
-          ].filter(Boolean),
+          ],
           onChange: function (selectedDates, dateStr, instance) {
             if (selectedDates.length === 2) {
               const start = selectedDates[0];

@@ -243,8 +243,6 @@ def report():
         current_month = datetime.now().month
         current_day = datetime.now().day
 
-        # SHOULD BE redirect(url_for)
-
         return redirect(url_for('index', start=start, end=end, current_month=current_month, current_day=current_day, current_year=current_year))
     return redirect(url_for('login'))
 
