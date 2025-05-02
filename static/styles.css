@@ -248,6 +248,7 @@ tr:hover {
   }
   #rangeDatePicker {
     display:none;
+    width: 130px;
   }
 
   @media (min-width: 768px) {

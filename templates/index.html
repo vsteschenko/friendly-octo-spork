@@ -91,32 +91,39 @@
           },
         });
       });
-      document.addEventListener("DOMContentLoaded", function () {
-        flatpickr("#rangeDatePicker", {
-          mode: "range",
-          dateFormat: "Y-m-d",
-          enableTime: false,
-          defaultDate: [
-            "{{ start if start else '' }}",
-            "{{ end if end else '' }}",
-          ],
-          onChange: function (selectedDates, dateStr, instance) {
-            if (selectedDates.length === 2) {
-              const start = selectedDates[0];
-              const end = selectedDates[1];
+      // document.addEventListener("DOMContentLoaded", function () {
+      //   flatpickr("#rangeDatePicker", {
+      //     mode: "range",
+      //     dateFormat: "Y-m-d",
+      //     enableTime: false,
+      //     defaultDate: [
+      //       "{{ start if start else '' }}",
+      //       "{{ end if end else '' }}",
+      //     ],
+      //     onChange: function (selectedDates, dateStr, instance) {
+      //       if (selectedDates.length === 2) {
+      //         const start = selectedDates[0];
+      //         const end = selectedDates[1];
 
-              const startStr = `${start.getFullYear()}-${String(
-                start.getMonth() + 1
-              ).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
-              const endStr = `${end.getFullYear()}-${String(
-                end.getMonth() + 1
-              ).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+      //         const startStr = `${start.getFullYear()}-${String(
+      //           start.getMonth() + 1
+      //         ).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+      //         const endStr = `${end.getFullYear()}-${String(
+      //           end.getMonth() + 1
+      //         ).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
 
-              window.location.href = `/report?start=${startStr}&end=${endStr}`;
-            }
-          },
-        });
-      });
+      //         fetch(`/report?start=${startStr}&end=${endStr}`)
+      //           .then((response) => response.json())
+      //           .then((data) => {
+      //             document.getElementById('totalExpenses').innerHTML = data.total_expenses;
+      //           })
+      //           .catch((error) => {
+      //             console.error(error)
+      //           })
+      //       }
+      //     },
+      //   });
+      // });
 
       function showOptions(type) {
         if (type == "income") {
@@ -415,7 +422,7 @@
           </svg>
         </button>
         <input type="text" id="datePicker" />
-        <input type="text" id="rangeDatePicker" placeholder="select period" />
+        <input type="text" id="rangeDatePicker" placeholder="Custom dates" />
         <button
           type="submit"
           name="day"
@@ -600,8 +607,8 @@
           <th></th>
         </tr>
         <tr>
-          <td>---</td>
-          <td>---</td>
+          <td>Total expenses</td>
+          <td id="totalExpenses">---</td>
         </tr>
       </table>
     </div>
