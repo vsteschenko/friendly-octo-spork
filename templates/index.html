@@ -20,9 +20,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         const savedTab = localStorage.getItem("activeTab");
 
-        if (savedTab === "report") {
-          showReport();
-        } else if (savedTab === "sumByCategory") {
+        if (savedTab === "sumByCategory") {
           sumByCategory();
         } else {
           allEntries();
@@ -317,26 +315,7 @@
       window.onload = loadExpenseChart;
 
       function showReport() {
-        const report = document.getElementsByClassName("report")[0];
-        const table = document.getElementsByClassName("table")[0];
-        const sumByCategory =
-          document.getElementsByClassName("sumByCategory")[0];
-
-        const calendar = document.getElementById("datePicker");
-        const calendarRange = document.getElementById("rangeDatePicker");
-        calendar.style.display = "none";
-        calendarRange.style.display = "inline";
-
-        const previousDayButton = document.getElementById("previousDay");
-        previousDayButton.style.display = "none";
-        const nextDayButton = document.getElementById("nextDay");
-        nextDayButton.style.display = "none";
-
-        report.style.display = "block";
-        table.style.display = "none";
-        sumByCategory.style.display = "none";
-
-        localStorage.setItem("activeTab", "report");
+        window.location.href = "/report";
       }
 
       function sumByCategory() {

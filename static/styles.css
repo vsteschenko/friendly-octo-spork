@@ -252,7 +252,7 @@ tr:hover {
   }
 
   @media (min-width: 768px) {
-    .txs, .table, .sumByCategory, nav, .chartBorder, .report {
+    .txs, .table, .sumByCategory, nav, .chartBorder, .report, .reportContainer {
       max-width: 600px;
     }
     .actions {
@@ -267,4 +267,13 @@ tr:hover {
   }
   svg:hover {
     stroke: #0056b3; 
+  }
+
+  .reportContainer {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
+    width: 100%;
+    display:flex;
+    justify-content: center;
+    height: 100%;
   }

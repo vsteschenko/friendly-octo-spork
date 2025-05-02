@@ -235,25 +235,7 @@ def expenses_by_category():
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'email' in session:
-        # email = session["email"]
-        # user_id = get_user_id(email)[0]
-        # start = request.args.get('start')
-        # end = request.args.get('end')
-
-        # if not (start and end):
-        #     return jsonify({"message": "Select dates"}), 400
-        
-        # start_of_day = datetime.strptime(start, '%Y-%m-%d').replace(hour=0, minute=0, second=0).strftime('%Y-%m-%d %H:%M:%S')
-        # end_of_day = datetime.strptime(end, '%Y-%m-%d').replace(hour=23, minute=59, second=59).strftime('%Y-%m-%d %H:%M:%S')
-
-        # cur = get_db().cursor()
-        # cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp BETWEEN ? AND ?", (user_id, start_of_day, end_of_day,))
-        # result = cur.fetchone()
-        # cur.close()
-
-        # total_expenses = result[0] if result[0] is not None else 0
-        # return jsonify({"total expenses": round(abs(total_expenses),2)})
-        return redirect(url_for('report'))
+        return render_template('report.html')
     return redirect(url_for('login'))
 
 @app.route('/delete_tx', methods=['POST'])
