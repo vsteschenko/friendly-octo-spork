@@ -55,7 +55,23 @@
           <canvas id="reportChart"></canvas>
         </div>
     </div>
-    <div class="reportContainer">REPORT</div>
+    <div class="table">
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th></th>
+          </tr>
+          <tr>
+            <td>Expenses</td>
+            <td>{{expenses}}</td>
+          </tr>
+          <tr>
+            <td>Income</td>
+            <td>{{income}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>
 </html>

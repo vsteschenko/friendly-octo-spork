@@ -237,7 +237,23 @@ def report():
     if 'email' in session:
         year = request.args.get('year', type=int, default=datetime.now().year)
         month = request.args.get('month', type=int, default=datetime.now().month)
-        return render_template('report.html', current_year=year, current_month=month)
+        email = session["email"]
+        user_id = get_user_id(email)[0]
+        timestamp_pattern = f"{year:04d}-{month:02d}-%"
+
+        cur = get_db().cursor()
+        cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ?", (user_id, timestamp_pattern))
+        expenses = cur.fetchone()[0]
+        cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='income' AND timestamp LIKE ?", (user_id, timestamp_pattern))
+        income = cur.fetchone()[0]
+        get_db().commit()
+        cur.close()
+        print(f'{expenses} AND {income}')
+        if expenses == None:
+            expenses = 0
+        if income == None:
+            income = 0
+        return render_template('report.html', current_year=year, current_month=month, expenses=expenses, income=income)
     return redirect(url_for('login'))
 
 @app.route('/report_chart', methods=['GET'])
