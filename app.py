@@ -230,13 +230,36 @@ def expenses_by_category():
         amounts = [round(amount * 100 / total, 1) for amount in amounts]
     else:
         amounts = [0 for _ in amounts]
-    return {"categories": categories, "amounts": amounts, "real_amounts": real_amounts}
+    return jsonify({"categories": categories, "amounts": amounts, "real_amounts": real_amounts})
 
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'email' in session:
-        return render_template('report.html')
+        year = request.args.get('year', type=int, default=datetime.now().year)
+        month = request.args.get('month', type=int, default=datetime.now().month)
+        return render_template('report.html', current_year=year, current_month=month)
     return redirect(url_for('login'))
+
+@app.route('/report_chart', methods=['GET'])
+def report_chart():
+    if 'email' in session:
+        year = request.args.get('year', type=int, default=datetime.now().year)
+        month = request.args.get('month', type=int, default=datetime.now().month)
+        email = session["email"]
+        user_id = get_user_id(email)[0]
+        timestamp_pattern = f"{year:04d}-{month:02d}-%"
+
+        cur = get_db().cursor()
+        cur.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ? GROUP BY category ", (user_id, timestamp_pattern))
+        data = cur.fetchall()
+        get_db().commit()
+        cur.close()
+
+        categories = [row[0] for row in data]
+        amounts = [row[1]*-1 for row in data]
+
+        return jsonify({"categories": categories,"amounts": amounts})
+    return jsonify({"error": "Unauthorized"}), 401
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():
