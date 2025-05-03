@@ -6,21 +6,12 @@
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles-report.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles-report.css') }}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
   </head>
-  <script>
-    function index() {
-        window.location.href = "/";
-    }
-  </script>
   <body>
     <nav>
       <button onclick="index()">
@@ -40,6 +31,7 @@
           />
         </svg>
       </button>
+      <input type="text" id="monthPicker" placeholder="Select month and year" value="{{ '%04d'|format(current_year) }}-{{ '%02d'|format(current_month) }}" />
       <button onclick="logout()">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -58,6 +50,12 @@
         </svg>
       </button>
     </nav>
+    <div class="chartBorder">
+        <div class="reportChart">
+          <canvas id="reportChart"></canvas>
+        </div>
+    </div>
     <div class="reportContainer">REPORT</div>
+    <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>
 </html>

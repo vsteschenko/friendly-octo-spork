@@ -27,6 +27,18 @@ body {
         }
     }
 }
+
+.chartBorder {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.reportChart {
+    padding: 10px;
+}
+
 .reportContainer {
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
@@ -36,11 +48,12 @@ body {
 }
 
 @media (min-width: 768px) {
-    nav, .reportContainer {
+    nav, .reportContainer, .chartBorder {
         max-width: 600px;
         }
     
 }
+
 svg {
     stroke: #007bff;
   }
