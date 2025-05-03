@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request, redirect, url_for, g
+from flask import Flask, render_template, session, request, redirect, url_for, g, jsonify
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
@@ -231,6 +231,12 @@ def expenses_by_category():
     else:
         amounts = [0 for _ in amounts]
     return {"categories": categories, "amounts": amounts, "real_amounts": real_amounts}
+
+@app.route('/report', methods=['GET', 'POST'])
+def report():
+    if 'email' in session:
+        return render_template('report.html')
+    return redirect(url_for('login'))
 
 @app.route('/delete_tx', methods=['POST'])
 def delete_tx():

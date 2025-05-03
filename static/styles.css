@@ -20,7 +20,6 @@
 
 body {
     margin: 0;
-    padding: 10px;
     box-sizing: border-box;
     background-color: white;
     width: 100%;
@@ -52,6 +51,7 @@ body {
     border-radius: 15px;
     width: 100%;
     padding-top: 10px;
+    display: inline;
 }
 .expenseChart {
     display: flex;
@@ -110,7 +110,7 @@ tr:hover {
 }
 
 .sumByCategory {
-    margin:10px;
+    margin:10px 0px;
     display: none;
     overflow-y: auto;
     flex-direction: column;
@@ -245,22 +245,14 @@ tr:hover {
   #datePicker {
     width: 70px;
   }
+  #rangeDatePicker {
+    display:none;
+    width: 130px;
+  }
 
   @media (min-width: 768px) {
-    .txs {
+    .txs, .table, .sumByCategory, nav, .chartBorder, .report, .reportContainer {
       max-width: 600px;
-    }
-    .table {
-      max-width: 600px;
-    }
-    .sumByCategory {
-        max-width: 600px;
-    }
-    nav {
-        max-width: 600px;
-    }
-    .chartBorder {
-        max-width: 600px;
     }
     .actions {
         max-width: 600px;
@@ -274,4 +266,13 @@ tr:hover {
   }
   svg:hover {
     stroke: #0056b3; 
+  }
+
+  .reportContainer {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
+    width: 100%;
+    display:flex;
+    justify-content: center;
+    height: 100%;
   }
