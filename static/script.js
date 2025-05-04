@@ -58,7 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("DOMContentLoaded", function () {
   flatpickr("#datePicker", {
-    // defaultDate: "{{ current_year }}-{{ '%02d'|format(current_month) }}-{{ '%02d'|format(current_day) }}",
     defaultDate: `${currentYear}-${currentMonth}-${currentDay}`,
     dateFormat: "Y-m-d",
     onChange: function (selectedDates, dateStr, instance) {
@@ -200,7 +199,6 @@ const categoryColors = {
 
 function loadExpenseChart() {
   fetch(
-    // `/expenses_by_category?year={{ current_year }}&month={{ current_month }}&day={{ current_day }}`
     `/expenses_by_category?year=${currentYear}&month=${currentMonth}&day=${currentDay}`
   )
     .then((response) => response.json())
@@ -220,7 +218,6 @@ function loadExpenseChart() {
           labels: data.categories,
           datasets: [
             {
-              // label: "Expenses by Category",
               data: data.amounts,
               backgroundColor: backgroundColors,
               borderWidth: 1,
@@ -232,7 +229,6 @@ function loadExpenseChart() {
           responsive: true,
           plugins: {
             legend: {
-              // position: "bottom"
               display: false,
             },
             datalabels: {

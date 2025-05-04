@@ -8,9 +8,8 @@ function getQueryParam(name) {
   }
   
 function loadReportChart() {
-const year = getQueryParam("year") || new Date().getFullYear();
-const month = getQueryParam("month") || new Date().getMonth() + 1;
-
+    const year = getQueryParam("year") || new Date().getFullYear();
+    const month = getQueryParam("month") || new Date().getMonth() + 1;
     fetch(`/report_chart?year=${year}&month=${month}`)
         .then((response) => response.json())
         .then((data) => {

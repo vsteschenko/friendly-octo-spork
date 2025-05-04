@@ -34,10 +34,12 @@ body {
     border-radius: 15px;
     width: 100%;
     margin-bottom: 10px;
+    height: 400px;
 }
-
+ 
 .reportChart {
     padding: 10px;
+    height: 100%;
 }
 
 .reportContainer {
@@ -46,6 +48,10 @@ body {
     width: 100%;
     height: 100vh;
     margin-bottom: 10px;
+}
+.reportChart canvas {
+  height: 100% !important;
+  width: 100% !important;
 }
 
 @media (min-width: 768px) {
@@ -65,11 +71,11 @@ svg {
 .table {
     margin: 10px 0px;
     overflow-y: auto;
-    height: calc(100vh - 50px - 80px);
+    height: 100vh;
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
     width: 100%;
-    margin-bottom: 70px;
+    /* margin-bottom: 70px; */
   }
   table {
     border-collapse: collapse;
