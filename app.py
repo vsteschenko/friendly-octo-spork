@@ -190,7 +190,7 @@ def index():
             app.logger.info(f'{email} -- Added transaction')
 
             return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
-        return render_template("index.html", txs=transactions, sum=sum, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
+        return render_template("index.html", txs=transactions, sum=sum or 0, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
     else:
         return redirect(url_for('login'))
 
