@@ -34,7 +34,6 @@ body {
     border-radius: 15px;
     width: 100%;
     margin-bottom: 10px;
-    height: 400px;
 }
  
 .reportChart {
@@ -49,16 +48,11 @@ body {
     height: 100vh;
     margin-bottom: 10px;
 }
-.reportChart canvas {
-  height: 100% !important;
-  width: 100% !important;
-}
 
 @media (min-width: 768px) {
     nav, .reportContainer, .chartBorder, .table{
         max-width: 600px;
         }
-    
 }
 
 svg {
@@ -75,7 +69,6 @@ svg {
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
     width: 100%;
-    /* margin-bottom: 70px; */
   }
   table {
     border-collapse: collapse;
