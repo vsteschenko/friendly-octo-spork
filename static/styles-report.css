@@ -49,10 +49,10 @@ body {
     height: 100vh;
     margin-bottom: 10px;
 }
-.reportChart canvas {
+/* .reportChart canvas {
   height: 100% !important;
   width: 100% !important;
-}
+} */
 
 @media (min-width: 768px) {
     nav, .reportContainer, .chartBorder, .table{
