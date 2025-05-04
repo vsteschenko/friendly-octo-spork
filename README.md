@@ -31,7 +31,7 @@
 git clone https://github.com/vsteschenko/friendly-octo-spork.git
 cd friendly-octo-spork
 
-2. **Create venv and install dependencies
+2. **Create venv and install dependencies:**
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
