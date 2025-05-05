@@ -308,3 +308,4 @@ function allEntries() {
 
   localStorage.setItem("activeTab", "allEntries");
 }
+

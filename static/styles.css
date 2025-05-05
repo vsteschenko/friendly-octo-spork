@@ -1,21 +1,5 @@
-@font-face {
-  font-family: 'Roboto';
-  src: url('static/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('static/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
-  font-style: italic;
-}
-
 * {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Times New Roman', Times, serif
 }
 
 body {

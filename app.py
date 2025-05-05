@@ -10,6 +10,12 @@ from sib_api_v3_sdk.rest import ApiException
 import logging
 from logging.handlers import RotatingFileHandler
 
+from flask import Response
+import pandas as pd
+import pyarrow as pa
+import pyarrow.feather as feather
+import io
+
 load_dotenv()
 DATABASE = os.getenv("DATABASE")
 
@@ -454,3 +460,23 @@ def verify():
     else:
         cur.close()
         return {"error":"Invalid or expired verification token."}, 404
+    
+@app.route("/api/data.arrow")
+def get_arrow_data():
+    if 'email' in session:
+        email = session['email']
+        user_id = get_user_id(email)[0]
+
+        cur = get_db().cursor()
+        cur.execute("SELECT amount,timestamp,category,type,place FROM transactions WHERE user_id = ?", (user_id,))
+        rows = cur.fetchall()
+        cur.close()
+
+        df = pd.DataFrame(rows, columns=['amount','timestamp','category','type','place'])
+        table = pa.Table.from_pandas(df)
+        sink = io.BytesIO()
+        feather.write_feather(table, sink, compression='uncompressed')
+        sink.seek(0)
+
+        return Response(sink.read(), content_type="application/octet-stream")
+    return redirect(url_for('login'))
