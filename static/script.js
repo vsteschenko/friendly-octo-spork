@@ -315,3 +315,7 @@ function menu() {
     menu.style.display = "none";
   }
 }
+
+function changePassword() {
+  window.location.href = "https://ledger.vsteschenko.me/change_password"
+}

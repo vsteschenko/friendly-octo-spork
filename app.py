@@ -454,3 +454,39 @@ def verify():
     else:
         cur.close()
         return {"error":"Invalid or expired verification token."}, 404
+
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+
+    email = session['email']
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT password FROM users WHERE email = ?", (email,))
+    user = cur.fetchone()
+    if not user:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        if not bcrypt.checkpw(current_password.encode('utf-8'), user[0]):
+            return render_template('change_password.html', error="Current password is incorrect")
+
+        if new_password != confirm_password:
+            return render_template('change_password.html', error="New passwords do not match")
+
+        if len(new_password) < 6:
+            return render_template('change_password.html', error="Password must be at least 6 characters")
+
+        new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        cur.execute("UPDATE users SET password = ? WHERE email = ?", (new_hash, email))
+        db.commit()
+        cur.close()
+
+        app.logger.info(f"{email} -- changed password")
+        return render_template('change_password.html', success="Password changed successfully")
+    return render_template('change_password.html')
