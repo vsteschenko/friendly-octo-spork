@@ -210,8 +210,10 @@ tr:hover {
     border-radius: 15px;
     position: fixed;
     bottom: 0;
-    left: 0;
-    width: 91%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 600px;
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -251,6 +253,10 @@ tr:hover {
     width: 130px;
   }
 
+  .txs, .table, .sumByCategory, nav, .chartBorder, .report, .reportContainer {
+      max-width: 600px;
+    }
+
   @media (min-width: 768px) {
     .txs, .table, .sumByCategory, nav, .chartBorder, .report, .reportContainer {
       max-width: 600px;
@@ -261,6 +267,17 @@ tr:hover {
         transform: translateX(-50%);
       }
   }
+  @media (max-width: 650px) {
+  .actions {
+    width: calc(100% - 40px);
+    margin-left: 10px;
+    margin-right: 10px;
+    left: unset;
+    transform: unset;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
   
   svg {
     stroke: #007bff;
@@ -287,7 +304,7 @@ tr:hover {
       z-index: 10000;
       right: -1px;
       top: -1px;
-      height: 300px;
+      height: 200px;
       background: #fff;
       flex-direction: column;
       svg {
@@ -322,6 +339,9 @@ tr:hover {
     align-items: center;
     justify-content: space-between;
     padding-left: 10px;
+    p {
+      margin-left: 25px
+    }
   }
   .menu-button:hover {
     background-color: rgb(235, 233, 233);
