@@ -107,7 +107,7 @@ def index():
         current_year = datetime.now().year
         current_month = datetime.now().month
         current_day = datetime.now().day
-
+        username = email.split("@")[0]
         if 'year' in request.args:
             current_year = int(request.args.get('year'))
 
@@ -189,8 +189,8 @@ def index():
 
             app.logger.info(f'{email} -- Added transaction')
 
-            return redirect(url_for("index", month=current_month, day=current_day, year=current_year))
-        return render_template("index.html", txs=transactions, sum=sum or 0, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories)
+            return redirect(url_for("index", month=current_month, day=current_day, year=current_year, username=username))
+        return render_template("index.html", txs=transactions, sum=sum or 0, current_month=current_month, current_day=current_day, current_year=current_year, sum_by_categories=sum_by_categories, username=username)
     else:
         return redirect(url_for('login'))
 

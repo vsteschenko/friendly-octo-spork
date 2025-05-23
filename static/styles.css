@@ -71,7 +71,7 @@ body {
   border: 1px solid rgb(235, 233, 233);
   border-radius: 15px;
   width: 100%;
-  margin-bottom: 70px;
+  margin-bottom: 80px;
 }
 table {
   border-collapse: collapse;
@@ -276,4 +276,57 @@ tr:hover {
     display:flex;
     justify-content: center;
     height: 100%;
+  }
+
+  .menu {
+      display: none;
+      border: 1px solid rgb(235, 233, 233);
+      position: absolute;
+      border-radius: 15px;
+      min-width: 300px;
+      z-index: 10000;
+      right: 9px;
+      margin-top: 10px;
+      height: 300px;
+      background: #fff;
+      flex-direction: column;
+      svg {
+        stroke: rgb(155, 155, 155);
+      }
+      svg:hover {
+        stroke: #0056b3; 
+      }
+  }
+  .menu-top {
+    height: 43px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    border-bottom: 1px solid rgb(235, 233, 233);
+    p {
+      margin-left: 25px
+    }
+  }
+  .account {
+    svg {
+      stroke: rgb(155, 155, 155);
+    }
+    svg:hover {
+      stroke: rgb(155, 155, 155);
+    }
+  }
+  .menu-button {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+  }
+  .menu-button:hover {
+    background-color: rgb(235, 233, 233);
+    cursor: pointer;
+    svg {
+      stroke: #0056b3; 
+    }
   }

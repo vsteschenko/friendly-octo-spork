@@ -266,8 +266,7 @@ function showReport() {
 function sumByCategory() {
   const report = document.getElementsByClassName("report")[0];
   const table = document.getElementsByClassName("table")[0];
-  const sumByCategory =
-    document.getElementsByClassName("sumByCategory")[0];
+  const sumByCategory = document.getElementsByClassName("sumByCategory")[0];
 
   const calendar = document.getElementById("datePicker");
   const calendarRange = document.getElementById("rangeDatePicker");
@@ -289,8 +288,7 @@ function sumByCategory() {
 function allEntries() {
   const report = document.getElementsByClassName("report")[0];
   const table = document.getElementsByClassName("table")[0];
-  const sumByCategory =
-    document.getElementsByClassName("sumByCategory")[0];
+  const sumByCategory = document.getElementsByClassName("sumByCategory")[0];
 
   const calendar = document.getElementById("datePicker");
   const calendarRange = document.getElementById("rangeDatePicker");
@@ -307,4 +305,13 @@ function allEntries() {
   sumByCategory.style.display = "none";
 
   localStorage.setItem("activeTab", "allEntries");
+}
+
+function menu() {
+  const menu = document.getElementsByClassName("menu")[0];
+  if (menu.style.display == "none") {
+    menu.style.display = "flex";
+  } else {
+    menu.style.display = "none";
+  }
 }
