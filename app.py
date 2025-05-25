@@ -11,9 +11,10 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 load_dotenv()
-DATABASE = os.getenv("DATABASE")
+# DATABASE = os.getenv("DATABASE")
 
 app = Flask(__name__)
+app.config["DATABASE"] = os.getenv("DATABASE")
 app.secret_key = os.getenv("SECRET_KEY")
 
 log_file = 'app.log'
@@ -37,10 +38,16 @@ def datetimeformat(value, format='%H:%M'):
     dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     return dt.strftime(format)
 
+# def get_db():
+#     db = getattr(g, '_database', None)
+#     if db is None:
+#         db = g._database = sqlite3.connect(DATABASE)
+#     return db
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = sqlite3.connect(app.config["DATABASE"])
     return db
 
 def email_validator(email):
