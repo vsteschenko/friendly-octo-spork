@@ -91,4 +91,29 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = `/report?year=${year}&month=${month}`;
       },
     });
-  });  
+  });
+
+function menu() {
+  const menu = document.getElementsByClassName("menu")[0];
+  if (menu.style.display == "none") {
+    menu.style.display = "flex";
+  } else {
+    menu.style.display = "none";
+  }
+}
+
+function changePassword() {
+  window.location.href = "https://ledger.vsteschenko.me/change_password"
+}
+
+function logout() {
+  fetch("/logout", { method: "GET" })
+    .then((response) => {
+      if (response.ok) {
+        window.location.href = "/login";
+      } else {
+        console.error("Error");
+      }
+    })
+    .catch((error) => console.error("Error:", error));
+}

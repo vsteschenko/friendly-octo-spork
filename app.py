@@ -245,6 +245,7 @@ def report():
         year = request.args.get('year', type=int, default=datetime.now().year)
         month = request.args.get('month', type=int, default=datetime.now().month)
         email = session["email"]
+        username = email.split("@")[0]
         user_id = get_user_id(email)[0]
         timestamp_pattern = f"{year:04d}-{month:02d}-%"
 
@@ -260,7 +261,7 @@ def report():
             expenses = 0
         if income == None:
             income = 0
-        return render_template('report.html', current_year=year, current_month=month, expenses=expenses, income=income)
+        return render_template('report.html', current_year=year, current_month=month, expenses=expenses, income=income, username=username)
     return redirect(url_for('login'))
 
 @app.route('/report_chart', methods=['GET'])

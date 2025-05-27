@@ -1,3 +1,22 @@
+@font-face {
+  font-family: 'Roboto';
+  src: url('static/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 75% 100%;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('static/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 75% 100%;
+  font-style: italic;
+}
+
+* {
+  font-family: 'Roboto', sans-serif;
+}
 body {
     margin: 0;
     padding: 0px 10px;
@@ -15,6 +34,7 @@ body {
         height: 32px;
         display: flex;
         flex-direction: row;
+        position: relative;
         justify-content: space-between;
         align-items: center;
         margin: 10px 0px;
@@ -27,6 +47,13 @@ body {
             padding: 3px 10px;
         }
     }
+}
+
+svg {
+  stroke: #007bff;
+  }
+svg:hover {
+  stroke: #0056b3; 
 }
 
 .chartBorder {
@@ -55,13 +82,6 @@ body {
         }
 }
 
-svg {
-    stroke: #007bff;
-  }
-  svg:hover {
-    stroke: #0056b3; 
-}
-
 .table {
     margin: 10px 0px;
     overflow-y: auto;
@@ -87,4 +107,60 @@ svg {
   
   tr:hover {
     background-color: rgb(235, 233, 233);
+  }
+
+   .menu {
+      display: none;
+      border: 1px solid rgb(235, 233, 233);
+      position: absolute;
+      border-radius: 15px;
+      min-width: 300px;
+      z-index: 10000;
+      right: -1px;
+      top: -1px;
+      height: 200px;
+      background: #fff;
+      flex-direction: column;
+      svg {
+        stroke: rgb(155, 155, 155);
+      }
+      svg:hover {
+        stroke: #0056b3; 
+      }
+  }
+  .menu-top {
+    height: 43px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    border-bottom: 1px solid rgb(235, 233, 233);
+    p {
+      margin-left: 25px
+    }
+  }
+  .account {
+    svg {
+      stroke: rgb(155, 155, 155);
+    }
+    svg:hover {
+      stroke: rgb(155, 155, 155);
+    }
+  }
+  .menu-button {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    p {
+      margin-left: 25px
+    }
+  }
+  .menu-button:hover {
+    background-color: rgb(235, 233, 233);
+    cursor: pointer;
+    svg {
+      stroke: #0056b3; 
+    }
   }
