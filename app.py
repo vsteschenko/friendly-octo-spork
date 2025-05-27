@@ -11,7 +11,6 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 load_dotenv()
-# DATABASE = os.getenv("DATABASE")
 
 app = Flask(__name__)
 app.config["DATABASE"] = os.getenv("DATABASE")
@@ -37,12 +36,6 @@ app.logger.setLevel(logging.INFO)
 def datetimeformat(value, format='%H:%M'):
     dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     return dt.strftime(format)
-
-# def get_db():
-#     db = getattr(g, '_database', None)
-#     if db is None:
-#         db = g._database = sqlite3.connect(DATABASE)
-#     return db
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -498,3 +491,87 @@ def change_password():
         app.logger.info(f"{email} -- changed password")
         return render_template('change_password.html', success="Password changed successfully")
     return render_template('change_password.html')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if "email" in session:
+        return redirect(url_for("index"))
+
+    if request.method == 'POST':
+        email = request.form['email'].lower()
+        if not email or not email_validator(email):
+            return render_template('forgot_password.html', error="Enter a valid email")
+
+        cur = get_db().cursor()
+        cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+        user = cur.fetchone()
+        if not user:
+            cur.close()
+            return render_template('forgot_password.html', error="No user with this email")
+
+        reset_token = generate_token()
+        cur.execute("UPDATE users SET reset_token = ? WHERE email = ?", (reset_token, email))
+        get_db().commit()
+        cur.close()
+        send_reset_password_email(email, reset_token)
+        return render_template('forgot_password.html', success="Password reset link sent to your email")
+    return render_template('forgot_password.html')
+
+# <a href="http://127.0.0.1:5000/reset_password?token={token}">Reset Password</a>
+# <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
+
+def send_reset_password_email(email, token):
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    subject = "Password Reset Request"
+    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    to = [{"email": email}]
+    html_content = f"""
+    <html>
+      <body>
+        <p>Hi!</p>
+        <p>To reset your password, click the link below:</p>
+        <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
+      </body>
+    </html>
+    """
+
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=to,
+        sender=sender,
+        subject=subject,
+        html_content=html_content,
+    )
+
+    try:
+        response = api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Password reset email sent to {email}. Message ID: {response.message_id}")
+    except ApiException as e:
+        app.logger.error(f"Failed to send password reset email: {e}")
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    token = request.args.get('token') or request.form.get('token')
+    if not token:
+        return "Invalid or missing token", 400
+
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+        if new_password != confirm_password:
+            return render_template('reset_password.html', token=token, error="Passwords do not match")
+        if len(new_password) < 6:
+            return render_template('reset_password.html', token=token, error="Password must be at least 6 characters")
+
+        cur = get_db().cursor()
+        cur.execute("SELECT email FROM users WHERE reset_token = ?", (token,))
+        user = cur.fetchone()
+        if not user:
+            cur.close()
+            return "Invalid or expired token", 400
+
+        new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        cur.execute("UPDATE users SET password = ?, reset_token = NULL WHERE reset_token = ?", (new_hash, token))
+        get_db().commit()
+        cur.close()
+        return render_template('reset_password.html', success="Password changed successfully")
+    return render_template('reset_password.html', token=token)
