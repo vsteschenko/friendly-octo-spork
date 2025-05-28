@@ -21,8 +21,13 @@
 		display: block;
 	}
 
+	html {
+		background-color: black;
+	}
+
 	body {
 		line-height: 1;
+		background-color: black;
 	}
 
 	ol, ul {
@@ -4280,7 +4285,7 @@
 /* Footer */
 
 	#footer {
-		padding: 4rem 0 2rem 0 ;
+		padding: 4rem 0 2rem 0;
 		background: #000;
 		text-align: center;
 	}
@@ -4312,7 +4317,7 @@
 		@media screen and (max-width: 736px) {
 
 			#footer {
-				padding: 3rem 0 1rem 0 ;
+				padding: 3rem 0 3rem 0 ;
 			}
 
 		}
