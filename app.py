@@ -575,3 +575,7 @@ def reset_password():
         cur.close()
         return render_template('reset_password.html', success="Password changed successfully")
     return render_template('reset_password.html', token=token)
+
+@app.route("/ledger", methods=['GET'])
+def ledger():
+    return render_template('ledger.html')

@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+	<html>
+		<head>
+			<title>Ledger by Slava</title>
+			<meta charset="utf-8">
+			<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+			<link rel="stylesheet" href="{{ url_for('static', filename='/landing-page/main.css') }}">
+		</head>
+		<body>
+			<header id="header" class="alt">
+				<div class="logo">
+					<a href="/">Launch App</a>
+				</div>
+			</header>
+			<section class="banner full">
+				<article>
+					<img src="{{ url_for('static', filename='/landing-page/images/slide01.jpg') }}" alt="" width="1440" height="961">
+					<div class="inner">
+						<header>
+							<p>A free expense tracker by <a href="https://vsteschenko.me">Slava</a></p>
+							<h2>Ledger</h2>
+						</header>
+					</div>
+				</article><article>
+					<img src="{{ url_for('static', filename='/landing-page/images/slide02.jpg') }}" alt="" width="1440" height="961">
+					<div class="inner">
+						<header>
+							<p>Real-time income and expense tracking</p>
+							<h2>Track</h2>
+						</header>
+					</div>
+				</article>
+				<article>
+					<img src="{{ url_for('static', filename='/landing-page/images/slide03.jpg') }}" alt="" width="1440" height="961">
+					<div class="inner">
+						<header>
+							<p>Easy categorization of transactions</p>
+							<h2>Organize</h2>
+						</header></div>
+				</article>
+				<article>
+					<img src="{{ url_for('static', filename='/landing-page/images/slide04.jpg') }}" alt="" width="1440" height="961">
+					<div class="inner">
+						<header>
+							<p>Data security and privacy</p>
+							<h2>Secure</h2>
+						</header>
+					</div>
+			</section>
+		<script src="{{ url_for('static', filename='/landing-page/js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='/landing-page/js/jquery.scrollex.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='/landing-page/js/skel.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='/landing-page/js/util.js') }}"></script>
+		<script src="{{ url_for('static', filename='/landing-page/js/main.js') }}"></script>
+		</body>
+	</html>
