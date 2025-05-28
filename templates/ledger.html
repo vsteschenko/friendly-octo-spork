@@ -6,6 +6,7 @@
 			<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<link rel="stylesheet" href="{{ url_for('static', filename='/landing-page/main.css') }}">
+			<link rel="stylesheet" href="{{ url_for('static', filename='/landing-page/font-awesome.min.css') }}">
 		</head>
 		<body>
 			<header id="header" class="alt">
@@ -48,10 +49,20 @@
 						</header>
 					</div>
 			</section>
-		<script src="{{ url_for('static', filename='/landing-page/js/jquery.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='/landing-page/js/jquery.scrollex.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='/landing-page/js/skel.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='/landing-page/js/util.js') }}"></script>
-		<script src="{{ url_for('static', filename='/landing-page/js/main.js') }}"></script>
+			 <footer id="footer">
+				<div class="container">
+					<ul class="icons">
+						<li><a href="#" class="icon fa fa-linkedin"><span class="label">Linkedin</span></a></li>
+						<li><a href="#" class="icon fa fa-github"><span class="label">Github</span></a></li>
+						<li><a href="#" class="icon fa fa-envelope-o"><span class="label">Email</span></a></li>
+					</ul>
+				</div>
+			</footer><div class="copyright">
+			Made with <a href="https://templated.co/">Templated</a>.
+			<script src="{{ url_for('static', filename='/landing-page/js/jquery.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='/landing-page/js/jquery.scrollex.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='/landing-page/js/skel.min.js') }}"></script>
+			<script src="{{ url_for('static', filename='/landing-page/js/util.js') }}"></script>
+			<script src="{{ url_for('static', filename='/landing-page/js/main.js') }}"></script>
 		</body>
 	</html>
