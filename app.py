@@ -65,7 +65,7 @@ def send_verification_email(email, token):
       <body>
         <p>Hi!</p>
         <p>Verify your email by clicking the link below:</p>
-        <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
+        <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
       </body>
     </html>
     """
