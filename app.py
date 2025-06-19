@@ -65,7 +65,7 @@ def send_verification_email(email, token):
       <body>
         <p>Hi!</p>
         <p>Verify your email by clicking the link below:</p>
-        <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
+        <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
       </body>
     </html>
     """
@@ -351,10 +351,15 @@ def signup():
     if request.method == 'POST':
         email = request.form['email'].lower()
         password = request.form['password']
-        if not email or not password:
+        confirm_password = request.form.get('confirm_password')
+        if not email or not password or not confirm_password:
             error='email and password missing'
             return render_template('signup.html', error=error)
         
+        if password != confirm_password:
+            error = "Passwords don't match"
+            return render_template("signup.html", error=error)
+
         if not email_validator(email):
             error = 'Invalid email'
             return render_template('signup.html', error=error)
