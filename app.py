@@ -103,7 +103,7 @@ def get_user_id(email):
 def index():
     if 'email' in session:
         email = session["email"]
-        user_id = get_user_id(email)[0]
+        user_id = get_user_id(email)
 
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -201,7 +201,7 @@ def expenses_by_category():
         return {"error": "Not logged in"}, 401
 
     email = session["email"]
-    user_id = get_user_id(email)[0]
+    user_id = get_user_id(email)
 
     current_year = int(request.args.get('year'))
     current_month = int(request.args.get('month'))
@@ -240,7 +240,7 @@ def report():
         month = request.args.get('month', type=int, default=datetime.now().month)
         email = session["email"]
         username = email.split("@")[0]
-        user_id = get_user_id(email)[0]
+        user_id = get_user_id(email)
         timestamp_pattern = f"{year:04d}-{month:02d}-%"
 
         cur = get_db().cursor()
@@ -264,7 +264,7 @@ def report_chart():
         year = request.args.get('year', type=int, default=datetime.now().year)
         month = request.args.get('month', type=int, default=datetime.now().month)
         email = session["email"]
-        user_id = get_user_id(email)[0]
+        user_id = get_user_id(email)
         timestamp_pattern = f"{year:04d}-{month:02d}-%"
 
         cur = get_db().cursor()
@@ -309,7 +309,7 @@ def delete_tx():
 def update_tx():
     if 'email' in session:
         email = session['email']
-        user_id = get_user_id(email)[0]
+        user_id = get_user_id(email)
         tx_id = request.form['tx_id']
         type = request.form['type']
         place = request.form['place']
