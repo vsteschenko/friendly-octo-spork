@@ -94,9 +94,10 @@ def close_connection(exception):
 
 def get_user_id(email):
     cur = get_db().cursor()
-    cur.execute("SELECT id FROM users WHERE email = ?",(email,))
-    user_id = cur.fetchone()
-    return user_id
+    cur.execute("SELECT id FROM users WHERE email = ?", (email,))
+    row = cur.fetchone()
+    cur.close()
+    return row[0] if row else None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -283,9 +284,18 @@ def delete_tx():
     if 'email' in session:
         email = session["email"]
         tx_id = request.form['tx_id']
+        user_id = get_user_id(email)
+        if user_id is None:
+            app.logger.warning(f"User with email {email} not found.")
+            return redirect(url_for('login'))
+        
         cur = get_db().cursor()
-        cur.execute("DELETE FROM transactions WHERE id = ?", (tx_id,))
+        cur.execute("DELETE FROM transactions WHERE id = ? AND user_id = ?", (tx_id, user_id))
         get_db().commit()
+        if cur.rowcount == 0:
+            app.logger.warning(f"{email} -- tried to delete transaction {tx_id}, but it doesn't exist.")
+        else:
+            app.logger.info(f"{email} -- deleted transaction {tx_id}")
         cur.close()
         app.logger.info(f'{email} -- deleted transaction {tx_id}')
 
