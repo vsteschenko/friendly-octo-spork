@@ -230,7 +230,7 @@ def expenses_by_category():
     data = cur.fetchall()
     cur.close()
     categories = [row[0] for row in data]
-    amounts = [abs(row[1]) for row in data]
+    amounts = [round(abs(float(row[1])), 2) for row in data]
     real_amounts = amounts
     total = sum(amounts)
     if total > 0:
@@ -284,7 +284,7 @@ def report_chart():
         cur.close()
 
         categories = [row[0] for row in data]
-        amounts = [row[1]*-1 for row in data]
+        amounts = [round(float(row[1]) * -1, 2) for row in data]
 
         return jsonify({"categories": categories,"amounts": amounts})
     return jsonify({"error": "Unauthorized"}), 401

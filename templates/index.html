@@ -214,16 +214,16 @@
     </div>
     <div class="table">
       <table>
-        <th>tx</th>
-        <th>category</th>
-        <th>place</th>
-        <th>time</th>
+        <th>Tx</th>
+        <th>Category</th>
+        <th>Place</th>
+        <th>Time</th>
         <th></th>
         <th></th>
         {% for tx in txs %}
         <tr>
           <td>{{ tx[0] | currency }}</td>
-          <td>{{ tx[4] }}</td>
+          <td>{{ tx[4]|capitalize }}</td>
           <td>{{ tx[5] }}</td>
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
           <td class="edit">
@@ -299,12 +299,12 @@
     <div class="sumByCategory">
       <table>
         <tr>
-          <th>category</th>
-          <th>total</th>
+          <th>Category</th>
+          <th>Total</th>
         </tr>
         {% for line in sum_by_categories %}
         <tr>
-          <td>{{ line[0] }}</td>
+          <td>{{ line[0]|capitalize }}</td>
           <td>{{ line[1] | currency }}</td>
         </tr>
         {% endfor %}
