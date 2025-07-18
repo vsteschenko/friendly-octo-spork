@@ -145,8 +145,16 @@ const centerTextPlugin = {
     const { width, height, ctx } = chart;
     ctx.save();
 
-    const label = "Total";
-    const value = totalSum ? totalSum : 0;
+    const label = "Expenses";
+    
+    // Вычисляем общую сумму расходов из данных графика
+    let value = 0;
+    if (chart.data.datasets[0] && chart.data.datasets[0].realAmounts) {
+      value = chart.data.datasets[0].realAmounts.reduce((sum, amount) => sum + amount, 0);
+    }
+    
+    // Форматируем значение
+    const formattedValue = value.toFixed(2);
 
     ctx.font = "bold 14px Arial";
     ctx.fillStyle = "#333";
@@ -156,7 +164,7 @@ const centerTextPlugin = {
     ctx.fillText(label, width / 2, height / 2 - 10);
 
     ctx.font = "bold 16px Arial";
-    ctx.fillText(value, width / 2, height / 2 + 10);
+    ctx.fillText(`${formattedValue}€`, width / 2, height / 2 + 10);
 
     ctx.restore();
   },
@@ -197,6 +205,8 @@ const categoryColors = {
   other: "#B0C4DE",
 };
 
+let expenseChartInstance = null;
+
 function loadExpenseChart() {
   fetch(
     `/expenses_by_category?year=${currentYear}&month=${currentMonth}&day=${currentDay}`
@@ -207,12 +217,17 @@ function loadExpenseChart() {
         .getElementById("expenseChart")
         .getContext("2d");
 
+      // Уничтожаем предыдущий график если он существует
+      if (expenseChartInstance) {
+        expenseChartInstance.destroy();
+      }
+
       const labels = data.categories;
       const backgroundColors = labels.map(
         (category) => categoryColors[category] || "#cccccc"
       );
 
-      new Chart(ctx, {
+      expenseChartInstance = new Chart(ctx, {
         type: "doughnut",
         data: {
           labels: data.categories,

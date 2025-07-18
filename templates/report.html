@@ -162,15 +162,15 @@
           </tr>
           <tr>
             <td>Balance</td>
-            <td>{{income + expenses}}</td>
+            <td>{{ (income + expenses) | currency }}</td>
           </tr>
           <tr>
             <td>Expenses</td>
-            <td>{{expenses}}</td>
+            <td>{{ expenses | currency }}</td>
           </tr>
           <tr>
             <td>Income</td>
-            <td>{{income}}</td>
+            <td>{{ income | currency }}</td>
           </tr>
         </table>
       </div>

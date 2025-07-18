@@ -37,6 +37,12 @@ def datetimeformat(value, format='%H:%M'):
     dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     return dt.strftime(format)
 
+@app.template_filter('currency')
+def currency_format(value):
+    if value is None:
+        return "0.00"
+    return "{:.2f}".format(float(value))
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -58,14 +64,14 @@ configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 def send_verification_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Verify your email"
-    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
     to = [{"email": email}]
     html_content = f"""
     <html>
       <body>
         <p>Hi!</p>
         <p>Verify your email by clicking the link below:</p>
-        <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
+        <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
       </body>
     </html>
     """
@@ -255,6 +261,10 @@ def report():
             expenses = 0
         if income == None:
             income = 0
+        
+        expenses = round(float(expenses), 2)
+        income = round(float(income), 2)
+        
         return render_template('report.html', current_year=year, current_month=month, expenses=expenses, income=income, username=username)
     return redirect(url_for('login'))
 
@@ -545,7 +555,7 @@ def send_reset_password_email(email, token):
       <body>
         <p>Hi!</p>
         <p>To reset your password, click the link below:</p>
-        <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
+        <a href="http://127.0.0.1:5000/reset_password?token={token}">Reset Password</a>
       </body>
     </html>
     """

@@ -222,7 +222,7 @@
         <th></th>
         {% for tx in txs %}
         <tr>
-          <td>{{ tx[0] }}</td>
+          <td>{{ tx[0] | currency }}</td>
           <td>{{ tx[4] }}</td>
           <td>{{ tx[5] }}</td>
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
@@ -305,7 +305,7 @@
         {% for line in sum_by_categories %}
         <tr>
           <td>{{ line[0] }}</td>
-          <td>{{ line[1] }}</td>
+          <td>{{ line[1] | currency }}</td>
         </tr>
         {% endfor %}
       </table>
@@ -418,7 +418,7 @@
       const currentYear = "{{ current_year }}";
       const currentMonth = "{{ '%02d'|format(current_month) }}";
       const currentDay = "{{ '%02d'|format(current_day) }}";
-      const totalSum = "{{ sum }}";
+      const totalSum = parseFloat("{{ sum }}") || 0;
     </script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
   </body>
