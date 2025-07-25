@@ -350,3 +350,10 @@ tr:hover {
       stroke: #0056b3; 
     }
   }
+  #delete-account:hover {
+        background-color: rgb(235, 233, 233);
+    cursor: pointer;
+    svg {
+      stroke: red; 
+    }
+  }

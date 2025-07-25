@@ -335,3 +335,7 @@ function menu() {
 function changePassword() {
   window.location.href = "https://ledger.vsteschenko.me/change_password"
 }
+
+function  deleteAccount() {
+  window.location.href = "/delete_account"
+}

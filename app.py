@@ -604,3 +604,100 @@ def reset_password():
 @app.route("/ledger", methods=['GET'])
 def ledger():
     return render_template('ledger.html')
+
+@app.route("/delete_account", methods=['GET', 'POST'])
+def delete_account():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+    
+    token = request.args.get('token')
+    if token:
+        return handle_delete_confirmation(token)
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').lower()
+        session_email = session['email'].lower()
+        
+        if email != session_email:
+            return render_template('delete_account.html', error="Email doesn't match your account")
+        
+        if not email_validator(email):
+            return render_template('delete_account.html', error="Invalid email format")
+        
+        delete_token = generate_token()
+        
+        cur = get_db().cursor()
+        cur.execute("UPDATE users SET delete_token = ? WHERE email = ?", (delete_token, email))
+        get_db().commit()
+        cur.close()
+        
+        send_delete_account_email(email, delete_token)
+        app.logger.info(f"Delete account request initiated for {email}")
+        
+        return render_template('delete_account.html', success="Confirmation email sent. Please check your inbox.")
+    
+    return render_template('delete_account.html')
+
+def handle_delete_confirmation(token):
+    if not token:
+        return "Invalid token", 400
+    
+    cur = get_db().cursor()
+    cur.execute("SELECT id, email FROM users WHERE delete_token = ?", (token,))
+    user = cur.fetchone()
+    
+    if not user:
+        cur.close()
+        return "Invalid or expired token", 400
+    
+    user_id, email = user
+    
+    try:
+        cur.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
+        cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        get_db().commit()
+        cur.close()
+        
+        if 'email' in session and session['email'].lower() == email.lower():
+            session.pop('email', None)
+        
+        app.logger.info(f"Account deleted successfully for {email}")
+        return render_template('delete_account.html', success="Your account has been permanently deleted.")
+        
+    except Exception as e:
+        get_db().rollback()
+        cur.close()
+        app.logger.error(f"Error deleting account for {email}: {e}")
+        return "An error occurred while deleting your account", 500
+
+# <a href="http://127.0.0.1:5000/delete_account?token={token}">Delete Account Permanently</a>
+# <a href="https://ledger.vsteschenko.me/delete_account?token={token}">Delete Account Permanently</a>
+def send_delete_account_email(email, token):
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    subject = "Ledger Delete Account Request"
+    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    to = [{"email": email}]
+    html_content = f"""
+    <html>
+      <body>
+        <p>Hi!</p>
+        <p>You have requested to delete your account. This action is irreversible and will permanently remove all your data.</p>
+        <p>To confirm account deletion, click the link below:</p>
+        <a href="https://ledger.vsteschenko.me/delete_account?token={token}">Delete Account Permanently</a>
+        <p>If you did not request this, please ignore this email.</p>
+      </body>
+    </html>
+    """
+
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=to,
+        sender=sender,
+        subject=subject,
+        html_content=html_content,
+    )
+
+    try:
+        response = api_instance.send_transac_email(send_smtp_email)
+        app.logger.info(f"Delete Account email sent to {email}. Message ID: {response.message_id}")
+    except ApiException as e:
+        app.logger.error(f"Failed to send delete account email: {e}")
