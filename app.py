@@ -548,7 +548,7 @@ def forgot_password():
 def send_reset_password_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Password Reset Request"
-    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
     to = [{"email": email}]
     html_content = f"""
     <html>
@@ -675,7 +675,7 @@ def handle_delete_confirmation(token):
 def send_delete_account_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Ledger Delete Account Request"
-    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
+    sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
     to = [{"email": email}]
     html_content = f"""
     <html>
