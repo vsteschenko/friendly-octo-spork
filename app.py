@@ -154,6 +154,8 @@ def index():
             """, (user_id, start_of_day, end_of_day))
         transactions = cur.fetchall()
 
+        transactions.sort(key=lambda tx: datetime.strptime(tx[3], "%Y-%m-%d %H:%M:%S"))
+
         cur.execute("""
             SELECT category, SUM(amount)
             FROM transactions
@@ -548,7 +550,7 @@ def forgot_password():
 def send_reset_password_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Password Reset Request"
-    sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
+    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
     to = [{"email": email}]
     html_content = f"""
     <html>
@@ -670,12 +672,13 @@ def handle_delete_confirmation(token):
         app.logger.error(f"Error deleting account for {email}: {e}")
         return "An error occurred while deleting your account", 500
 
-# <a href="http://127.0.0.1:5000/delete_account?token={token}">Delete Account Permanently</a>
-# <a href="https://ledger.vsteschenko.me/delete_account?token={token}">Delete Account Permanently</a>
+# <a href="http://127.0.0.1:5000/reset_password?token={token}">Reset Password</a>
+# <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
+
 def send_delete_account_email(email, token):
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Ledger Delete Account Request"
-    sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
+    sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
     to = [{"email": email}]
     html_content = f"""
     <html>
@@ -683,7 +686,7 @@ def send_delete_account_email(email, token):
         <p>Hi!</p>
         <p>You have requested to delete your account. This action is irreversible and will permanently remove all your data.</p>
         <p>To confirm account deletion, click the link below:</p>
-        <a href="https://ledger.vsteschenko.me/delete_account?token={token}">Delete Account Permanently</a>
+        <a href="https://127.0.0.1:5000/delete_account?token={token}">Delete Account Permanently</a>
         <p>If you did not request this, please ignore this email.</p>
       </body>
     </html>
