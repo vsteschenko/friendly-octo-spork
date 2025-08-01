@@ -24,7 +24,7 @@ jobs:
 
       - name: Deploy to server
         run: |
-          ssh -i ~/.ssh/id_rsa root@134.122.56.15 << 'EOF'
+          ssh -i ~/.ssh/id_rsa ledgeradmin@134.122.56.15 << 'EOF'
             set -e
             cd ~/friendly-octo-spork
             git reset --hard HEAD
