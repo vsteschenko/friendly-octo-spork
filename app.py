@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request, redirect, url_for, g, jsonify
+from flask import Flask, render_template, session, request, redirect, url_for, g, jsonify, make_response
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
@@ -31,6 +31,11 @@ console_handler.setFormatter(formatter)
 app.logger.addHandler(console_handler)
 
 app.logger.setLevel(logging.INFO)
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    return response
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%H:%M'):
