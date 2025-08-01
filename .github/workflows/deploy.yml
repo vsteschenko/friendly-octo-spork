@@ -25,14 +25,15 @@ jobs:
       - name: Deploy to server
         run: |
           ssh -i ~/.ssh/id_rsa ledgeradmin@134.122.56.15 << 'EOF'
-            sudo i
             set -e
-            cd ~/friendly-octo-spork
-            git reset --hard HEAD
-            git clean -fd
-            git pull origin main
-            python3 -m venv venv
-            source venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart gunicorn
+            sudo bash -c "
+              cd /root/friendly-octo-spork || exit 1
+              git reset --hard HEAD
+              git clean -fd
+              git pull origin main
+              python3 -m venv venv
+              source venv/bin/activate
+              pip install -r requirements.txt
+              systemctl restart gunicorn
+            "
           EOF
