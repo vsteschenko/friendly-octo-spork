@@ -122,3 +122,26 @@ function logout() {
     })
     .catch((error) => console.error("Error:", error));
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const indexFunc = document.getElementsByClassName("index")[0]
+  if (indexFunc) {
+    indexFunc.addEventListener("click", index)
+  }
+  const menuButtons = document.querySelectorAll(".menu-toggle");
+  menuButtons.forEach(btn => {
+    btn.addEventListener("click", menu);
+  });
+  const changePasswordBtn = document.getElementById("change-password");
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener("click", changePassword);
+  }
+  const deleteBtn = document.getElementById("delete-account");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", deleteAccount);
+  }
+  const logoutFunc = document.getElementById("logout")
+  if (logoutFunc) {
+    logoutFunc.addEventListener("click", logout)
+  }
+});

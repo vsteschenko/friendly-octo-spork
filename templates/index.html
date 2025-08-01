@@ -82,7 +82,7 @@
         </button>
       </form>
       <button
-          id="menu-button"
+          class="menu-toggle"
           style="
             all: unset;
             cursor: pointer;
@@ -121,7 +121,7 @@
         </div>
         <p>{{ username }}</p>
         <button
-          id="menu-button"
+          class="menu-toggle"
           style="
             all: unset;
             cursor: pointer;
@@ -163,9 +163,8 @@
         </button>
         <p>Change password</p>
       </div>
-      <div class="menu-button" onclick="logout()">
+      <div class="menu-button" id="logout">
         <button
-          onclick="logout()"
           style="
             all: unset;
             cursor: pointer;
@@ -239,11 +238,9 @@
         <canvas id="expenseChart"></canvas>
       </div>
       <div class="buttons">
-        <button onclick="allEntries()" id="buttonsMargin">Transactions</button>
-        <button onclick="sumByCategory()" id="buttonsMargin">
-          Sum By Category
-        </button>
-        <button onclick="showReport()">Report</button>
+        <button class="allEntries" id="buttonsMargin">Transactions</button>
+        <button class="sumByCategoryFunc" id="buttonsMargin">Sum By Category</button>
+        <button class="showReport">Report</button>
       </div>
     </div>
     <div class="table">

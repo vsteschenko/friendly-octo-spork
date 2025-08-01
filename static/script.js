@@ -339,16 +339,32 @@ function  deleteAccount() {
   window.location.href = "/delete_account"
 }
 document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menu-button");
-  if (menuBtn) {
-    menuBtn.addEventListener("click", menu);
-  }
+  const menuButtons = document.querySelectorAll(".menu-toggle");
+  menuButtons.forEach(btn => {
+    btn.addEventListener("click", menu);
+  });
   const changePasswordBtn = document.getElementById("change-password");
   if (changePasswordBtn) {
     changePasswordBtn.addEventListener("click", changePassword);
   }
   const deleteBtn = document.getElementById("delete-account");
   if (deleteBtn) {
-    deleteBtn.addEventListener("click", deleteBtn);
+    deleteBtn.addEventListener("click", deleteAccount);
+  }
+  const txs = document.getElementsByClassName('allEntries')[0];
+  if (txs) {
+    txs.addEventListener("click", allEntries)
+  }
+  const sumByCategoryFunc = document.getElementsByClassName('sumByCategoryFunc')[0]
+  if (sumByCategoryFunc) {
+    sumByCategoryFunc.addEventListener("click", sumByCategory)
+  }
+  const showReportFunc = document.getElementsByClassName('showReport')[0]
+  if (showReportFunc) {
+    showReportFunc.addEventListener("click", showReport)
+  }
+  const logoutFunc = document.getElementById("logout")
+  if (logoutFunc) {
+    logoutFunc.addEventListener("click", logout)
   }
 });
