@@ -1,10 +1,11 @@
-const body = document.body;
-const currentYear = body.dataset.year;
-const currentMonth = body.dataset.month;
-const currentDay = body.dataset.day;
-const totalSum = parseFloat(body.dataset.sum) || 0;
-
 document.addEventListener("DOMContentLoaded", () => {
+
+  const body = document.body;
+  const currentYear = parseInt(body.dataset.year);
+  const currentMonth = parseInt(body.dataset.month);
+  const currentDay = parseInt(body.dataset.day);
+  const totalSum = parseFloat(body.dataset.sum) || 0;
+
   const savedTab = localStorage.getItem("activeTab");
 
   if (savedTab === "sumByCategory") {
@@ -202,6 +203,12 @@ const categoryColors = {
 let expenseChartInstance = null;
 
 function loadExpenseChart() {
+  const body = document.body;
+  const currentYear = parseInt(body.dataset.year);
+  const currentMonth = parseInt(body.dataset.month);
+  const currentDay = parseInt(body.dataset.day);
+  const totalSum = parseFloat(body.dataset.sum) || 0;
+  
   fetch(
     `/expenses_by_category?year=${currentYear}&month=${currentMonth}&day=${currentDay}`
   )
