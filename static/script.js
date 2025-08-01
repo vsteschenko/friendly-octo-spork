@@ -12,16 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     allEntries();
   }
-});
 
-function setCurrentTime() {
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  document.getElementById("tx_time").value = `${hours}:${minutes}`;
-}
+  function setCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    document.getElementById("tx_time").value = `${hours}:${minutes}`;
+  }
 
-document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("spendBtn").onclick = () => {
     document.getElementById("txModal").classList.remove("hidden");
     document.getElementById("txType").value = "expense";
@@ -46,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setCurrentTime();
   };
 
+  const modal = document.getElementById('txModal')
+
   document.querySelector(".close-btn").onclick = () => {
     document.getElementById("txModal").classList.add("hidden");
     const txForm = document.getElementById("txForm");
@@ -60,9 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
       txForm.reset();
     }
   };
-});
 
-document.addEventListener("DOMContentLoaded", function () {
   flatpickr("#datePicker", {
     defaultDate: `${currentYear}-${currentMonth}-${currentDay}`,
     dateFormat: "Y-m-d",
@@ -74,21 +72,18 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = `/?year=${year}&month=${month}&day=${day}`;
     },
   });
-});
 
-function showOptions(type) {
-  if (type == "income") {
-    document.getElementById("income-options").style.display = "inline";
-    document.getElementById("expense-options").style.display = "none";
-  } else if (type == "expense") {
-    document.getElementById("income-options").style.display = "none";
-    document.getElementById("expense-options").style.display = "inline";
+  function showOptions(type) {
+    if (type == "income") {
+      document.getElementById("income-options").style.display = "inline";
+      document.getElementById("expense-options").style.display = "none";
+    } else if (type == "expense") {
+      document.getElementById("income-options").style.display = "none";
+      document.getElementById("expense-options").style.display = "inline";
+    }
   }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
   const editButtons = document.querySelectorAll(".edit-btn");
-  const modal = document.getElementById("txModal");
 
   editButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -137,13 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelector(".close-btn").onclick = () => {
     modal.classList.add("hidden");
-  };
-});
-window.onclick = (event) => {
-  if (event.target === modal) {
-    modal.classList.add("hidden");
   }
-};
+})
 
 const centerTextPlugin = {
   id: "centerText",
@@ -153,13 +143,11 @@ const centerTextPlugin = {
 
     const label = "Expenses";
     
-    // Вычисляем общую сумму расходов из данных графика
     let value = 0;
     if (chart.data.datasets[0] && chart.data.datasets[0].realAmounts) {
       value = chart.data.datasets[0].realAmounts.reduce((sum, amount) => sum + amount, 0);
     }
     
-    // Форматируем значение
     const formattedValue = value.toFixed(2);
 
     ctx.font = "bold 14px Arial";
