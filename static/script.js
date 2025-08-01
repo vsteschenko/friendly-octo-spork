@@ -208,7 +208,7 @@ function loadExpenseChart() {
   const currentMonth = parseInt(body.dataset.month);
   const currentDay = parseInt(body.dataset.day);
   const totalSum = parseFloat(body.dataset.sum) || 0;
-  
+
   fetch(
     `/expenses_by_category?year=${currentYear}&month=${currentMonth}&day=${currentDay}`
   )
@@ -334,7 +334,7 @@ function menu() {
 }
 
 function changePassword() {
-  window.location.href = "https://ledger.vsteschenko.me/change_password"
+  window.location.href = "/change_password"
 }
 
 function  deleteAccount() {
