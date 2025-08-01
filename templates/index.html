@@ -121,7 +121,7 @@
         </div>
         <p>{{ username }}</p>
         <button
-          onclick="menu()"
+          id="menu-button"
           style="
             all: unset;
             cursor: pointer;
@@ -140,9 +140,8 @@
           </svg>
         </button>
       </div>
-      <div class="menu-button" onclick="changePassword()">
+      <div class="menu-button" id="change-password">
         <button
-          onclick="logout()"
           style="
             all: unset;
             cursor: pointer;
@@ -199,9 +198,8 @@
         </button>
         <p>Sign out</p>
       </div>
-      <div class="menu-button" id="delete-account" onclick="deleteAccount()">
+      <div class="menu-button" id="delete-account">
         <button
-          onclick="logout()"
           style="
             all: unset;
             cursor: pointer;

@@ -332,19 +332,23 @@ function menu() {
     menu.style.display = "none";
   }
 }
-document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menu-button");
-  if (menuBtn) {
-    menuBtn.addEventListener("click", () => {
-      menu();
-    });
-  }
-});
-
 function changePassword() {
   window.location.href = "/change_password"
 }
-
 function  deleteAccount() {
   window.location.href = "/delete_account"
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menu-button");
+  if (menuBtn) {
+    menuBtn.addEventListener("click", menu);
+  }
+  const changePasswordBtn = document.getElementById("change-password");
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener("click", changePassword);
+  }
+  const deleteBtn = document.getElementById("delete-account");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", deleteBtn);
+  }
+});
