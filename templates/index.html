@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   </head>
-  <body>
+  <body data-year="{{ current_year }}" data-month="{{ '%02d'|format(current_month) }}" data-day="{{ '%02d'|format(current_day) }}" data-sum="{{ sum }}">
     <nav>
       <form method="get" action="{{ url_for('index') }}">
         <input type="hidden" name="year" value="{{ current_year }}" />
@@ -450,12 +450,12 @@
         </form>
       </div>
     </div>
-    <script>
+    <!-- <script>
       const currentYear = "{{ current_year }}";
       const currentMonth = "{{ '%02d'|format(current_month) }}";
       const currentDay = "{{ '%02d'|format(current_day) }}";
       const totalSum = parseFloat("{{ sum }}") || 0;
-    </script>
+    </script> -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
   </body>
 </html>

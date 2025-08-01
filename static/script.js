@@ -1,3 +1,9 @@
+const body = document.body;
+const currentYear = body.dataset.year;
+const currentMonth = body.dataset.month;
+const currentDay = body.dataset.day;
+const totalSum = parseFloat(body.dataset.sum) || 0;
+
 document.addEventListener("DOMContentLoaded", () => {
   const savedTab = localStorage.getItem("activeTab");
 
