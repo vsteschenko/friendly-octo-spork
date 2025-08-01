@@ -332,6 +332,14 @@ function menu() {
     menu.style.display = "none";
   }
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menu-button");
+  if (menuBtn) {
+    menuBtn.addEventListener("click", () => {
+      menu();
+    });
+  }
+});
 
 function changePassword() {
   window.location.href = "/change_password"
