@@ -54,8 +54,8 @@ function loadReportChart() {
         plugins: {
             legend: { display: false },
             datalabels: {
-            color: "#fff",
-            font: { weight: "bold", size: 14 },
+              color: "black",
+              font: { weight: "bold", size: 14 },
             },
         },
         scales: {
