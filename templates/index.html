@@ -254,7 +254,7 @@
         {% for tx in txs %}
         <tr>
           <td>{{ tx[0] | currency }}</td>
-          <td>{{ tx[4]|capitalize }}</td>
+          <td>{{ tx[4] | capitalize }}</td>
           <td>{{ tx[5] }}</td>
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
           <td class="edit">
@@ -407,6 +407,7 @@
               <option value="travel">Travel</option>
               <option value="utilities">Utilities</option>
               <option value="work">Work</option>
+              <option value="taxes">Taxes</option>
               <option value="other">Other</option>
             </select>
           </div>

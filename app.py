@@ -32,6 +32,30 @@ app.logger.addHandler(console_handler)
 
 app.logger.setLevel(logging.INFO)
 
+category_name = {
+    "beauty": "Beauty & Personal Care",
+    "education": "Childcare & Education",
+    "credit_card": "Credit Card Payments",
+    "dining": "Dining Out",
+    "entertainment": "Entertainment",
+    "gifts": "Gifts & Donations",
+    "grocery": "Grocery",
+    "health": "Health & Fitness",
+    "home_maintenance": "Home Maintenance",
+    "insurance": "Insurance",
+    "loans": "Loan Payments",
+    "pets": "Pets",
+    "rent": "Rent",
+    "savings": "Savings & Investments",
+    "shopping": "Shopping",
+    "subscriptions": "Subscriptions & Memberships",
+    "transport": "Transportation",
+    "travel": "Travel",
+    "utilities": "Utilities",
+    "work": "Work",
+    "other": "Other"
+}
+
 @app.after_request
 def add_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
@@ -169,7 +193,9 @@ def index():
             GROUP BY category
             """, (user_id, start_of_day, end_of_day))
         sum_by_categories = cur.fetchall()
-
+        # ЗДЕСЬ ПОМЕНЯТЬ НАЗВАНИЯ КАТЕГОРИЙ
+        # categories = [category_name[category] for category in categories] ПРИМЕРНО ТАК
+ 
         cur.execute("""
             SELECT SUM(amount) 
             FROM transactions 
@@ -237,6 +263,9 @@ def expenses_by_category():
     data = cur.fetchall()
     cur.close()
     categories = [row[0] for row in data]
+
+    # categories = [category_name[category] for category in categories]
+
     amounts = [round(abs(float(row[1])), 2) for row in data]
     real_amounts = amounts
     total = sum(amounts)

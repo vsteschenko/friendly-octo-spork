@@ -16,27 +16,27 @@ function loadReportChart() {
     const ctx = document.getElementById("reportChart").getContext("2d");
     const labels = data.categories;
     const categoryColors = {
-        grocery: "#ff82a0",
-        rent: "#bedaf1",
-        utilities: "#f1d3b2",
-        transport: "#ffe0e6",
-        insurance: "#d9c6e5",
-        dining: "#b9bfc6",
-        entertainment: "#c1eccf",
-        shopping: "#6eb5ff",
-        health: "#fff5ba",
-        beauty: "#ace7ff",
-        loans: "#9ad4bc",
-        credit_card: "#d98880",
-        savings: "#b9bafd",
-        education: "#fcf0e4",
-        pets: "#fbcfea",
-        home_maintenance: "#c2ecd6",
-        gifts: "#ffa9f7",
-        travel: "#ffffb5",
-        subscriptions: "#ffd4b7",
-        other: "#b7f2ff",
-        };
+      grocery: "#ff82a0",
+      rent: "#bedaf1",
+      utilities: "#f1d3b2",
+      transport: "#ffe0e6",
+      insurance: "#d9c6e5",
+      dining: "#b9bfc6",
+      entertainment: "#c1eccf",
+      shopping: "#6eb5ff",
+      health: "#fff5ba",
+      beauty: "#ace7ff",
+      loans: "#9ad4bc",
+      credit_card: "#d98880",
+      savings: "#b9bafd",
+      education: "#fcf0e4",
+      pets: "#fbcfea",
+      home_maintenance: "#c2ecd6",
+      gifts: "#ffa9f7",
+      travel: "#ffffb5",
+      subscriptions: "#ffd4b7",
+      other: "#b7f2ff",
+    };
     const backgroundColors = labels.map((category) => categoryColors[category] || "#cccccc");
     new Chart(ctx, {
         type: "bar",
@@ -59,12 +59,12 @@ function loadReportChart() {
             },
         },
         scales: {
-            y: {
+          y: {
             beginAtZero: true,
             ticks: {
                 callback: (value) => value + " €",
             },
-            },
+          },
         },
         },
         plugins: [ChartDataLabels],
