@@ -193,8 +193,8 @@ def index():
             GROUP BY category
             """, (user_id, start_of_day, end_of_day))
         sum_by_categories = cur.fetchall()
-        # ЗДЕСЬ ПОМЕНЯТЬ НАЗВАНИЯ КАТЕГОРИЙ
-        # categories = [category_name[category] for category in categories] ПРИМЕРНО ТАК
+        # change categories
+        # categories = [category_name[category] for category in categories]
  
         cur.execute("""
             SELECT SUM(amount) 
