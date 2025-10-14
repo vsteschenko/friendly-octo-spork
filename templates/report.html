@@ -3,17 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Keeping the existing page title and external resources the same ensures the
+      report page matches the rest of the application.  The fonts, Chart.js
+      library and Flatpickr date picker are all loaded here just like the
+      original template.
+    -->
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles-report.css') }}"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+    <!-- Main stylesheet for report page.  See static/styles-report.css for details. -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles-report.css') }}"
+    />
+    <!-- Date picker styles and scripts -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css"
+    />
+    <!-- Favicon for PWA support -->
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   </head>
   <body>
+    <!-- Navigation bar with month picker and user menu.  This is largely
+         untouched from the original design to preserve the familiar UI
+         elements users are accustomed to. -->
     <nav>
       <button class="index">
         <svg
@@ -32,182 +53,253 @@
           />
         </svg>
       </button>
-      <input type="text" id="monthPicker" placeholder="Select month and year" value="{{ '%04d'|format(current_year) }}-{{ '%02d'|format(current_month) }}" />
+      <!-- Month/year picker.  Value is pre-populated using Jinja variables. -->
+      <input
+        type="text"
+        id="monthPicker"
+        placeholder="Select month and year"
+        value="{{ '%04d'|format(current_year) }}-{{ '%02d'|format(current_month) }}"
+      />
+      <!-- Menu toggle button -->
       <button class="menu-toggle">
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke-width="1.5" 
-          stroke="currentColor" 
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
           width="24"
           height="24"
         >
-          <path 
-            stroke-linecap="round" 
-            stroke-linejoin="round" 
-            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+          />
         </svg>
       </button>
+      <!-- Hidden menu.  This section uses absolute positioning and is revealed
+           by the menu-toggle button via JavaScript.  User name and account
+           actions live here. -->
       <div class="menu">
-      <div class="menu-top">
-        <div class="account" style="
-            all: unset;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 10px;
-            right: 270px;
-            z-index: 9999;
-        ">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-        </div>
-        <p>{{ username }}</p>
-        <button
-          class="menu-toggle"
-          style="
-            all: unset;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 5;
-            right: 10px;
-            z-index: 9999;
-        ">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div class="menu-button" id="change-password">
-        <button
-          style="
-            all: unset;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 50px;
-            right: 270px;
-            z-index: 9999;
-          "
-        >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-        </svg>
-        </button>
-        <p>Change password</p>
-      </div>
-      <div class="menu-button" id="logout">
-        <button
-          style="
-            all: unset;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 90px;
-            right: 270px;
-            z-index: 9999;
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            width="24"
-            height="24"
+        <div class="menu-top">
+          <div
+            class="account"
+            style="
+              all: unset;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              position: absolute;
+              top: 10px;
+              right: 270px;
+              z-index: 9999;
+            "
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
-            />
-          </svg>
-        </button>
-        <p>Sign out</p>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+            </svg>
+          </div>
+          <p>{{ username }}</p>
+          <button
+            class="menu-toggle"
+            style="
+              all: unset;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              position: absolute;
+              top: 5;
+              right: 10px;
+              z-index: 9999;
+            "
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <!-- Menu buttons for account actions -->
+        <div class="menu-button" id="change-password">
+          <button
+            style="
+              all: unset;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              position: absolute;
+              top: 50px;
+              right: 270px;
+              z-index: 9999;
+            "
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+            </svg>
+          </button>
+          <p>Change password</p>
+        </div>
+        <div class="menu-button" id="logout">
+          <button
+            style="
+              all: unset;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              position: absolute;
+              top: 90px;
+              right: 270px;
+              z-index: 9999;
+            "
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              width="24"
+              height="24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
+              />
+            </svg>
+          </button>
+          <p>Sign out</p>
+        </div>
+        <div class="menu-button" id="delete-account">
+          <button
+            style="
+              all: unset;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              position: absolute;
+              top: 130px;
+              right: 270px;
+              z-index: 9999;
+            "
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              width="24"
+              height="24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+          </button>
+          <p>Delete Account</p>
+        </div>
       </div>
-      <div class="menu-button" id="delete-account">
-        <button
-          style="
-            all: unset;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            top: 130px;
-            right: 270px;
-            z-index: 9999;
-          "
-        >
-
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke-width="1.5" 
-          stroke="currentColor" 
-          width="24"
-          height="24">
-            <path 
-              stroke-linecap="round" 
-              stroke-linejoin="round" 
-              d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" 
-            />
-          </svg>
-        </button>
-        <p>Delete Account</p>
-      </div>
-    </div>
     </nav>
 
-    <div class="chartBorder">
-        <div class="reportChart">
-          <canvas id="reportChart"></canvas>
-        </div>
-    </div>
-    <div class="table">
-        <table>
-          <tr>
-            <th>Metric</th>
-            <th></th>
-          </tr>
-          <tr>
-            <td>Balance</td>
-            <td>{{ (income + expenses) | currency }}</td>
-          </tr>
-          <tr>
-            <td>Expenses</td>
-            <td>{{ expenses | currency }}</td>
-          </tr>
-          <tr>
-            <td>Income</td>
-            <td>{{ income | currency }}</td>
-          </tr>
-        </table>
+    <!-- Summary cards.  These present the key metrics (balance, income and expenses)
+         in a visually appealing card layout.  They replace the table for a
+         cleaner overview and reuse Jinja variables for dynamic values. -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <span class="summary-label">Balance</span>
+        <span class="summary-value">{{ (income + expenses) | currency }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Income</span>
+        <span class="summary-value">{{ income | currency }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Expenses</span>
+        <span class="summary-value">{{ expenses | currency }}</span>
       </div>
     </div>
+
+    <div class="chartBorder">
+      <div class="reportChart">
+        <canvas id="reportChart"></canvas>
+      </div>
+    </div>
+    <div class="table">
+      <table>
+        <tr>
+          <th>Metric</th>
+          <th></th>
+        </tr>
+        <tr>
+          <td>Balance</td>
+          <td>{{ (income + expenses) | currency }}</td>
+        </tr>
+        <tr>
+          <td>Expenses</td>
+          <td>{{ expenses | currency }}</td>
+        </tr>
+        <tr>
+          <td>Income</td>
+          <td>{{ income | currency }}</td>
+        </tr>
+      </table>
+    </div>
+
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>
 </html>

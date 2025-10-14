@@ -1,166 +1,209 @@
 @font-face {
-  font-family: 'Roboto';
-  src: url('/static/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
-  font-style: normal;
-}
+      font-family: 'Roboto';
+      src: url('/static/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-stretch: 75% 100%;
+      font-style: normal;
+    }
 
-@font-face {
-  font-family: 'Roboto';
-  src: url('/static/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
-  font-style: italic;
-}
+    @font-face {
+      font-family: 'Roboto';
+      src: url('/static/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
+      font-weight: 100 900;
+      font-stretch: 75% 100%;
+      font-style: italic;
+    }
 
-* {
-  font-family: 'Roboto', sans-serif;
-}
-body {
-    margin: 0;
-    padding: 0px 10px;
-    box-sizing: border-box;
-    background-color: white;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    nav {
+    * {
+      font-family: 'Roboto', sans-serif;
+    }
+    body {
+        margin: 0;
+        padding: 0px 10px;
+        box-sizing: border-box;
+        background-color: white;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        nav {
+            border: 1px solid rgb(235, 233, 233);
+            border-radius: 15px;
+            width: 100%;
+            height: 32px;
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0px;
+            button {
+                all: unset;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3px 10px;
+            }
+        }
+    }
+
+    svg {
+      stroke: #007bff;
+      }
+    svg:hover {
+      stroke: #0056b3; 
+    }
+
+    .chartBorder {
         border: 1px solid rgb(235, 233, 233);
         border-radius: 15px;
         width: 100%;
-        height: 32px;
-        display: flex;
-        flex-direction: row;
-        position: relative;
-        justify-content: space-between;
-        align-items: center;
-        margin: 10px 0px;
-        button {
-            all: unset;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 3px 10px;
-        }
+        margin-bottom: 10px;
     }
-}
 
-svg {
-  stroke: #007bff;
-  }
-svg:hover {
-  stroke: #0056b3; 
-}
+    .reportChart {
+        padding: 10px;
+        height: 100%;
+    }
 
-.chartBorder {
-    border: 1px solid rgb(235, 233, 233);
-    border-radius: 15px;
+    .reportContainer {
+        border: 1px solid rgb(235, 233, 233);
+        border-radius: 15px;
+        width: 100%;
+        height: 100vh;
+        margin-bottom: 10px;
+    }
+
+    @media (min-width: 768px) {
+        nav, .reportContainer, .chartBorder, .table{
+            max-width: 600px;
+            }
+    }
+
+    .table {
+        margin: 10px 0px;
+        overflow-y: auto;
+        height: 100vh;
+        border: 1px solid rgb(235, 233, 233);
+        border-radius: 15px;
+        width: 100%;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid rgb(235, 233, 233);
+      }
+
+      th {
+        background-color: #f1f1f1;
+      }
+
+      tr:hover {
+        background-color: rgb(235, 233, 233);
+      }
+
+       .menu {
+          display: none;
+          border: 1px solid rgb(235, 233, 233);
+          position: absolute;
+          border-radius: 15px;
+          min-width: 300px;
+          z-index: 10000;
+          right: -1px;
+          top: -1px;
+          height: 200px;
+          background: #fff;
+          flex-direction: column;
+          svg {
+            stroke: rgb(155, 155, 155);
+          }
+          svg:hover {
+            stroke: #0056b3; 
+          }
+      }
+      .menu-top {
+        height: 43px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 10px;
+        border-bottom: 1px solid rgb(235, 233, 233);
+        p {
+          margin-left: 25px
+        }
+      }
+      .account {
+        svg {
+          stroke: rgb(155, 155, 155);
+        }
+        svg:hover {
+          stroke: rgb(155, 155, 155);
+        }
+      }
+      .menu-button {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 10px;
+        p {
+          margin-left: 25px
+        }
+      }
+      .menu-button:hover {
+        background-color: rgb(235, 233, 233);
+        cursor: pointer;
+        svg {
+          stroke: #0056b3; 
+        }
+      }
+
+/*
+ * Additional styles for the enhanced report page.  These summary cards give
+ * users a quick overview of their finances.  They follow the same border
+ * radius and color scheme as other elements on the page to ensure a
+ * cohesive look and feel.
+ */
+.summary-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     width: 100%;
     margin-bottom: 10px;
 }
- 
-.reportChart {
+
+.summary-card {
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
     padding: 10px;
-    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.reportContainer {
-    border: 1px solid rgb(235, 233, 233);
-    border-radius: 15px;
-    width: 100%;
-    height: 100vh;
-    margin-bottom: 10px;
+.summary-label {
+    font-size: 14px;
+    color: rgb(100, 100, 100);
+}
+
+.summary-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 5px;
 }
 
 @media (min-width: 768px) {
-    nav, .reportContainer, .chartBorder, .table{
+    .summary-cards {
+        flex-direction: row;
         max-width: 600px;
-        }
+    }
+    .summary-card {
+        flex: 1;
+    }
 }
-
-.table {
-    margin: 10px 0px;
-    overflow-y: auto;
-    height: 100vh;
-    border: 1px solid rgb(235, 233, 233);
-    border-radius: 15px;
-    width: 100%;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-  
-  th, td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid rgb(235, 233, 233);
-  }
-  
-  th {
-    background-color: #f1f1f1;
-  }
-  
-  tr:hover {
-    background-color: rgb(235, 233, 233);
-  }
-
-   .menu {
-      display: none;
-      border: 1px solid rgb(235, 233, 233);
-      position: absolute;
-      border-radius: 15px;
-      min-width: 300px;
-      z-index: 10000;
-      right: -1px;
-      top: -1px;
-      height: 200px;
-      background: #fff;
-      flex-direction: column;
-      svg {
-        stroke: rgb(155, 155, 155);
-      }
-      svg:hover {
-        stroke: #0056b3; 
-      }
-  }
-  .menu-top {
-    height: 43px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 10px;
-    border-bottom: 1px solid rgb(235, 233, 233);
-    p {
-      margin-left: 25px
-    }
-  }
-  .account {
-    svg {
-      stroke: rgb(155, 155, 155);
-    }
-    svg:hover {
-      stroke: rgb(155, 155, 155);
-    }
-  }
-  .menu-button {
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 10px;
-    p {
-      margin-left: 25px
-    }
-  }
-  .menu-button:hover {
-    background-color: rgb(235, 233, 233);
-    cursor: pointer;
-    svg {
-      stroke: #0056b3; 
-    }
-  }

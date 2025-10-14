@@ -1,0 +1,769 @@
+From 6e6fbd27e64cc6b948c067c53020dfeeaa912bb2 Mon Sep 17 00:00:00 2001
+From: LedgerUser <ledger@example.com>
+Date: Tue, 14 Oct 2025 07:31:18 +0000
+Subject: [PATCH] Improve report page: add summary cards and category doughnut
+ chart
+
+---
+ static/reportScript.js   | 202 +++++++++++++++++++++++++
+ static/styles-report.css | 209 +++++++++++++++++++++++++
+ templates/report.html    | 319 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 730 insertions(+)
+ create mode 100644 static/reportScript.js
+ create mode 100644 static/styles-report.css
+ create mode 100644 templates/report.html
+
+diff --git a/static/reportScript.js b/static/reportScript.js
+new file mode 100644
+index 0000000..9b0371f
+--- /dev/null
++++ b/static/reportScript.js
+@@ -0,0 +1,202 @@
++// Script responsible for loading and rendering the report charts as well as
++// handling basic UI interactions.  This is largely based off of the
++// original reportScript.js but has been extended to draw a second chart
++// illustrating the proportional breakdown of spending by category.
++
++function index() {
++  window.location.href = "/";
++}
++
++function getQueryParam(name) {
++  const urlParams = new URLSearchParams(window.location.search);
++  return urlParams.get(name);
++}
++
++function loadReportChart() {
++  const year = getQueryParam("year") || new Date().getFullYear();
++  const month = getQueryParam("month") || new Date().getMonth() + 1;
++  fetch(`/report_chart?year=${year}&month=${month}`)
++    .then((response) => response.json())
++    .then((data) => {
++      const ctx = document
++        .getElementById("reportChart")
++        .getContext("2d");
++      const labels = data.categories;
++      const categoryColors = {
++        grocery: "#ff82a0",
++        rent: "#bedaf1",
++        utilities: "#f1d3b2",
++        transport: "#ffe0e6",
++        insurance: "#d9c6e5",
++        dining: "#b9bfc6",
++        entertainment: "#c1eccf",
++        shopping: "#6eb5ff",
++        health: "#fff5ba",
++        beauty: "#ace7ff",
++        loans: "#9ad4bc",
++        credit_card: "#d98880",
++        savings: "#b9bafd",
++        education: "#fcf0e4",
++        pets: "#fbcfea",
++        home_maintenance: "#c2ecd6",
++        gifts: "#ffa9f7",
++        travel: "#ffffb5",
++        subscriptions: "#ffd4b7",
++        other: "#b7f2ff",
++      };
++      // Map each category to a colour.  Unknown categories default to grey.
++      const backgroundColors = labels.map(
++        (category) => categoryColors[category] || "#cccccc"
++      );
++
++      // Draw bar chart summarising the absolute amounts per category.  This
++      // matches the original design but is encapsulated in a function for
++      // clarity.
++      new Chart(ctx, {
++        type: "bar",
++        data: {
++          labels,
++          datasets: [
++            {
++              label: "Expenses",
++              data: data.amounts,
++              backgroundColor: backgroundColors,
++              borderWidth: 1,
++            },
++          ],
++        },
++        options: {
++          responsive: true,
++          plugins: {
++            legend: { display: false },
++            datalabels: {
++              color: "black",
++              font: { weight: "bold", size: 14 },
++            },
++          },
++          scales: {
++            y: {
++              beginAtZero: true,
++              ticks: {
++                callback: (value) => value + " €",
++              },
++            },
++          },
++        },
++        plugins: [ChartDataLabels],
++      });
++
++      // Draw a doughnut chart showing the relative share of each category.  This
++      // leverages the same labels, amounts and colours to ensure consistency
++      // between charts.  Displaying the legend on the bottom improves
++      // readability, especially on mobile devices.
++      const ctxPie = document
++        .getElementById("categoryChart")
++        .getContext("2d");
++      new Chart(ctxPie, {
++        type: "doughnut",
++        data: {
++          labels,
++          datasets: [
++            {
++              data: data.amounts,
++              backgroundColor: backgroundColors,
++              borderWidth: 1,
++            },
++          ],
++        },
++        options: {
++          responsive: true,
++          plugins: {
++            legend: { display: true, position: "bottom" },
++            datalabels: {
++              color: "black",
++              font: { weight: "bold", size: 14 },
++              formatter: (value) => value + " €",
++            },
++          },
++        },
++        plugins: [ChartDataLabels],
++      });
++    })
++    .catch((error) => console.error("Error loading chart data:", error));
++}
++
++// Ensure the chart is loaded on page load.  This replicates the original
++// behaviour of assigning loadReportChart to window.onload.
++window.onload = loadReportChart;
++
++// Initialise the month picker and menu controls.  This block preserves
++// existing interactive functionality such as navigation, menu toggling and
++// account actions.
++document.addEventListener("DOMContentLoaded", function () {
++  flatpickr("#monthPicker", {
++    dateFormat: "Y-m",
++    plugins: [
++      new monthSelectPlugin({
++        shorthand: true,
++        dateFormat: "Y-m",
++        altFormat: "F Y",
++      }),
++    ],
++    onChange: function (selectedDates, dateStr, instance) {
++      const selectedDate = selectedDates[0];
++      const year = selectedDate.getFullYear();
++      const month = selectedDate.getMonth() + 1;
++      window.location.href = `/report?year=${year}&month=${month}`;
++    },
++  });
++});
++
++function menu() {
++  const menuEl = document.getElementsByClassName("menu")[0];
++  const currentDisplay = window.getComputedStyle(menuEl).display;
++  if (currentDisplay == "none") {
++    menuEl.style.display = "flex";
++  } else {
++    menuEl.style.display = "none";
++  }
++}
++
++function changePassword() {
++  window.location.href = "/change_password";
++}
++
++function deleteAccount() {
++  window.location.href = "/delete_account";
++}
++
++function logout() {
++  fetch("/logout", { method: "GET" })
++    .then((response) => {
++      if (response.ok) {
++        window.location.href = "/login";
++      } else {
++        console.error("Error");
++      }
++    })
++    .catch((error) => console.error("Error:", error));
++}
++
++document.addEventListener("DOMContentLoaded", () => {
++  const indexFunc = document.getElementsByClassName("index")[0];
++  if (indexFunc) {
++    indexFunc.addEventListener("click", index);
++  }
++  const menuButtons = document.querySelectorAll(".menu-toggle");
++  menuButtons.forEach((btn) => {
++    btn.addEventListener("click", menu);
++  });
++  const changePasswordBtn = document.getElementById("change-password");
++  if (changePasswordBtn) {
++    changePasswordBtn.addEventListener("click", changePassword);
++  }
++  const deleteBtn = document.getElementById("delete-account");
++  if (deleteBtn) {
++    deleteBtn.addEventListener("click", deleteAccount);
++  }
++  const logoutFunc = document.getElementById("logout");
++  if (logoutFunc) {
++    logoutFunc.addEventListener("click", logout);
++  }
++});
+\ No newline at end of file
+diff --git a/static/styles-report.css b/static/styles-report.css
+new file mode 100644
+index 0000000..b726882
+--- /dev/null
++++ b/static/styles-report.css
+@@ -0,0 +1,209 @@
++@font-face {
++      font-family: 'Roboto';
++      src: url('/static/Roboto/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
++      font-weight: 100 900;
++      font-stretch: 75% 100%;
++      font-style: normal;
++    }
++
++    @font-face {
++      font-family: 'Roboto';
++      src: url('/static/Roboto/Roboto-Italic-VariableFont_wdth,wght.ttf') format('truetype');
++      font-weight: 100 900;
++      font-stretch: 75% 100%;
++      font-style: italic;
++    }
++
++    * {
++      font-family: 'Roboto', sans-serif;
++    }
++    body {
++        margin: 0;
++        padding: 0px 10px;
++        box-sizing: border-box;
++        background-color: white;
++        width: 100%;
++        height: 100vh;
++        display: flex;
++        flex-direction: column;
++        align-items: center;
++        nav {
++            border: 1px solid rgb(235, 233, 233);
++            border-radius: 15px;
++            width: 100%;
++            height: 32px;
++            display: flex;
++            flex-direction: row;
++            position: relative;
++            justify-content: space-between;
++            align-items: center;
++            margin: 10px 0px;
++            button {
++                all: unset;
++                cursor: pointer;
++                display: flex;
++                align-items: center;
++                justify-content: center;
++                padding: 3px 10px;
++            }
++        }
++    }
++
++    svg {
++      stroke: #007bff;
++      }
++    svg:hover {
++      stroke: #0056b3; 
++    }
++
++    .chartBorder {
++        border: 1px solid rgb(235, 233, 233);
++        border-radius: 15px;
++        width: 100%;
++        margin-bottom: 10px;
++    }
++
++    .reportChart {
++        padding: 10px;
++        height: 100%;
++    }
++
++    .reportContainer {
++        border: 1px solid rgb(235, 233, 233);
++        border-radius: 15px;
++        width: 100%;
++        height: 100vh;
++        margin-bottom: 10px;
++    }
++
++    @media (min-width: 768px) {
++        nav, .reportContainer, .chartBorder, .table{
++            max-width: 600px;
++            }
++    }
++
++    .table {
++        margin: 10px 0px;
++        overflow-y: auto;
++        height: 100vh;
++        border: 1px solid rgb(235, 233, 233);
++        border-radius: 15px;
++        width: 100%;
++      }
++      table {
++        border-collapse: collapse;
++        width: 100%;
++      }
++
++      th, td {
++        padding: 10px;
++        text-align: left;
++        border-bottom: 1px solid rgb(235, 233, 233);
++      }
++
++      th {
++        background-color: #f1f1f1;
++      }
++
++      tr:hover {
++        background-color: rgb(235, 233, 233);
++      }
++
++       .menu {
++          display: none;
++          border: 1px solid rgb(235, 233, 233);
++          position: absolute;
++          border-radius: 15px;
++          min-width: 300px;
++          z-index: 10000;
++          right: -1px;
++          top: -1px;
++          height: 200px;
++          background: #fff;
++          flex-direction: column;
++          svg {
++            stroke: rgb(155, 155, 155);
++          }
++          svg:hover {
++            stroke: #0056b3; 
++          }
++      }
++      .menu-top {
++        height: 43px;
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        padding-left: 10px;
++        border-bottom: 1px solid rgb(235, 233, 233);
++        p {
++          margin-left: 25px
++        }
++      }
++      .account {
++        svg {
++          stroke: rgb(155, 155, 155);
++        }
++        svg:hover {
++          stroke: rgb(155, 155, 155);
++        }
++      }
++      .menu-button {
++        height: 40px;
++        display: flex;
++        align-items: center;
++        justify-content: space-between;
++        padding-left: 10px;
++        p {
++          margin-left: 25px
++        }
++      }
++      .menu-button:hover {
++        background-color: rgb(235, 233, 233);
++        cursor: pointer;
++        svg {
++          stroke: #0056b3; 
++        }
++      }
++
++/*
++ * Additional styles for the enhanced report page.  These summary cards give
++ * users a quick overview of their finances.  They follow the same border
++ * radius and color scheme as other elements on the page to ensure a
++ * cohesive look and feel.
++ */
++.summary-cards {
++    display: flex;
++    flex-direction: column;
++    gap: 10px;
++    width: 100%;
++    margin-bottom: 10px;
++}
++
++.summary-card {
++    border: 1px solid rgb(235, 233, 233);
++    border-radius: 15px;
++    padding: 10px;
++    display: flex;
++    flex-direction: column;
++}
++
++.summary-label {
++    font-size: 14px;
++    color: rgb(100, 100, 100);
++}
++
++.summary-value {
++    font-size: 20px;
++    font-weight: 700;
++    margin-top: 5px;
++}
++
++@media (min-width: 768px) {
++    .summary-cards {
++        flex-direction: row;
++        max-width: 600px;
++    }
++    .summary-card {
++        flex: 1;
++    }
++}
+\ No newline at end of file
+diff --git a/templates/report.html b/templates/report.html
+new file mode 100644
+index 0000000..a710b7a
+--- /dev/null
++++ b/templates/report.html
+@@ -0,0 +1,319 @@
++<!DOCTYPE html>
++<html lang="en">
++  <head>
++    <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <!--
++      Keeping the existing page title and external resources the same ensures the
++      report page matches the rest of the application.  The fonts, Chart.js
++      library and Flatpickr date picker are all loaded here just like the
++      original template.
++    -->
++    <title>Ledger</title>
++    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
++    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
++    <!-- Main stylesheet for report page.  See static/styles-report.css for details. -->
++    <link
++      rel="stylesheet"
++      href="{{ url_for('static', filename='styles-report.css') }}"
++    />
++    <!-- Date picker styles and scripts -->
++    <link
++      rel="stylesheet"
++      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
++    />
++    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
++    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
++    <link
++      rel="stylesheet"
++      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css"
++    />
++    <!-- Favicon for PWA support -->
++    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
++  </head>
++  <body>
++    <!-- Navigation bar with month picker and user menu.  This is largely
++         untouched from the original design to preserve the familiar UI
++         elements users are accustomed to. -->
++    <nav>
++      <button class="index">
++        <svg
++          xmlns="http://www.w3.org/2000/svg"
++          fill="none"
++          viewBox="0 0 24 24"
++          stroke-width="1.5"
++          stroke="currentColor"
++          width="24"
++          height="24"
++        >
++          <path
++            stroke-linecap="round"
++            stroke-linejoin="round"
++            d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
++          />
++        </svg>
++      </button>
++      <!-- Month/year picker.  Value is pre-populated using Jinja variables. -->
++      <input
++        type="text"
++        id="monthPicker"
++        placeholder="Select month and year"
++        value="{{ '%04d'|format(current_year) }}-{{ '%02d'|format(current_month) }}"
++      />
++      <!-- Menu toggle button -->
++      <button class="menu-toggle">
++        <svg
++          xmlns="http://www.w3.org/2000/svg"
++          fill="none"
++          viewBox="0 0 24 24"
++          stroke-width="1.5"
++          stroke="currentColor"
++          width="24"
++          height="24"
++        >
++          <path
++            stroke-linecap="round"
++            stroke-linejoin="round"
++            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
++          />
++        </svg>
++      </button>
++      <!-- Hidden menu.  This section uses absolute positioning and is revealed
++           by the menu-toggle button via JavaScript.  User name and account
++           actions live here. -->
++      <div class="menu">
++        <div class="menu-top">
++          <div
++            class="account"
++            style="
++              all: unset;
++              display: flex;
++              align-items: center;
++              justify-content: center;
++              width: 24px;
++              height: 24px;
++              position: absolute;
++              top: 10px;
++              right: 270px;
++              z-index: 9999;
++            "
++          >
++            <svg
++              xmlns="http://www.w3.org/2000/svg"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke-width="1.5"
++              stroke="currentColor"
++              class="size-6"
++            >
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
++              />
++            </svg>
++          </div>
++          <p>{{ username }}</p>
++          <button
++            class="menu-toggle"
++            style="
++              all: unset;
++              cursor: pointer;
++              display: flex;
++              align-items: center;
++              justify-content: center;
++              width: 24px;
++              height: 24px;
++              position: absolute;
++              top: 5;
++              right: 10px;
++              z-index: 9999;
++            "
++          >
++            <svg
++              xmlns="http://www.w3.org/2000/svg"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke-width="1.5"
++              stroke="currentColor"
++              class="size-6"
++            >
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="M6 18 18 6M6 6l12 12"
++              />
++            </svg>
++          </button>
++        </div>
++        <!-- Menu buttons for account actions -->
++        <div class="menu-button" id="change-password">
++          <button
++            style="
++              all: unset;
++              cursor: pointer;
++              display: flex;
++              align-items: center;
++              justify-content: center;
++              width: 24px;
++              height: 24px;
++              position: absolute;
++              top: 50px;
++              right: 270px;
++              z-index: 9999;
++            "
++          >
++            <svg
++              xmlns="http://www.w3.org/2000/svg"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke-width="1.5"
++              stroke="currentColor"
++              class="size-6"
++            >
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
++              />
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
++              />
++            </svg>
++          </button>
++          <p>Change password</p>
++        </div>
++        <div class="menu-button" id="logout">
++          <button
++            style="
++              all: unset;
++              cursor: pointer;
++              display: flex;
++              align-items: center;
++              justify-content: center;
++              width: 24px;
++              height: 24px;
++              position: absolute;
++              top: 90px;
++              right: 270px;
++              z-index: 9999;
++            "
++          >
++            <svg
++              xmlns="http://www.w3.org/2000/svg"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke-width="1.5"
++              stroke="currentColor"
++              width="24"
++              height="24"
++            >
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
++              />
++            </svg>
++          </button>
++          <p>Sign out</p>
++        </div>
++        <div class="menu-button" id="delete-account">
++          <button
++            style="
++              all: unset;
++              cursor: pointer;
++              display: flex;
++              align-items: center;
++              justify-content: center;
++              width: 24px;
++              height: 24px;
++              position: absolute;
++              top: 130px;
++              right: 270px;
++              z-index: 9999;
++            "
++          >
++            <svg
++              xmlns="http://www.w3.org/2000/svg"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke-width="1.5"
++              stroke="currentColor"
++              width="24"
++              height="24"
++            >
++              <path
++                stroke-linecap="round"
++                stroke-linejoin="round"
++                d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
++              />
++            </svg>
++          </button>
++          <p>Delete Account</p>
++        </div>
++      </div>
++    </nav>
++
++    <!-- Summary cards.  These present the key metrics (balance, income and expenses)
++         in a visually appealing card layout.  They replace the table for a
++         cleaner overview and reuse Jinja variables for dynamic values. -->
++    <div class="summary-cards">
++      <div class="summary-card">
++        <span class="summary-label">Balance</span>
++        <span class="summary-value">{{ (income + expenses) | currency }}</span>
++      </div>
++      <div class="summary-card">
++        <span class="summary-label">Income</span>
++        <span class="summary-value">{{ income | currency }}</span>
++      </div>
++      <div class="summary-card">
++        <span class="summary-label">Expenses</span>
++        <span class="summary-value">{{ expenses | currency }}</span>
++      </div>
++    </div>
++
++    <!-- First chart container.  Displays a bar chart of expenses per category. -->
++    <div class="chartBorder">
++      <div class="reportChart">
++        <canvas id="reportChart"></canvas>
++      </div>
++    </div>
++
++    <!-- Second chart container.  A new doughnut chart illustrating the
++         distribution of expenses among categories.  It reuses the same data
++         fetched for the bar chart. -->
++    <div class="chartBorder">
++      <div class="reportChart">
++        <canvas id="categoryChart"></canvas>
++      </div>
++    </div>
++
++    <!-- Original table retained for accessibility.  Users who prefer tabular
++         data can still view their metrics in a simple table format. -->
++    <div class="table">
++      <table>
++        <tr>
++          <th>Metric</th>
++          <th></th>
++        </tr>
++        <tr>
++          <td>Balance</td>
++          <td>{{ (income + expenses) | currency }}</td>
++        </tr>
++        <tr>
++          <td>Expenses</td>
++          <td>{{ expenses | currency }}</td>
++        </tr>
++        <tr>
++          <td>Income</td>
++          <td>{{ income | currency }}</td>
++        </tr>
++      </table>
++    </div>
++
++    <!-- Load the script that fetches data and draws the charts. -->
++    <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
++  </body>
++</html>
+\ No newline at end of file
+-- 
+2.39.5
+
