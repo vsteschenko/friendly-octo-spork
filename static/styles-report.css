@@ -82,7 +82,7 @@
             }
     }
 
-    .table {
+    /* .table {
         margin: 10px 0px;
         overflow-y: auto;
         height: 100vh;
@@ -107,7 +107,7 @@
 
       tr:hover {
         background-color: rgb(235, 233, 233);
-      }
+      } */
 
        .menu {
           display: none;
@@ -165,12 +165,6 @@
         }
       }
 
-/*
- * Additional styles for the enhanced report page.  These summary cards give
- * users a quick overview of their finances.  They follow the same border
- * radius and color scheme as other elements on the page to ensure a
- * cohesive look and feel.
- */
 .summary-cards {
     display: flex;
     flex-direction: column;
