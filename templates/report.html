@@ -274,24 +274,11 @@
       </div>
     </div>
 
-    <!-- First chart container.  Displays a bar chart of expenses per category. -->
     <div class="chartBorder">
       <div class="reportChart">
         <canvas id="reportChart"></canvas>
       </div>
     </div>
-
-    <!-- Second chart container.  A new doughnut chart illustrating the
-         distribution of expenses among categories.  It reuses the same data
-         fetched for the bar chart. -->
-    <div class="chartBorder">
-      <div class="reportChart">
-        <canvas id="categoryChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Original table retained for accessibility.  Users who prefer tabular
-         data can still view their metrics in a simple table format. -->
     <div class="table">
       <table>
         <tr>
@@ -313,7 +300,6 @@
       </table>
     </div>
 
-    <!-- Load the script that fetches data and draws the charts. -->
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>
 </html>
