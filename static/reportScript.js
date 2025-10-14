@@ -1,8 +1,3 @@
-// Script responsible for loading and rendering the report charts as well as
-// handling basic UI interactions.  This is largely based off of the
-// original reportScript.js but has been extended to draw a second chart
-// illustrating the proportional breakdown of spending by category.
-
 function index() {
   window.location.href = "/";
 }
@@ -44,14 +39,10 @@ function loadReportChart() {
         subscriptions: "#ffd4b7",
         other: "#b7f2ff",
       };
-      // Map each category to a colour.  Unknown categories default to grey.
       const backgroundColors = labels.map(
         (category) => categoryColors[category] || "#cccccc"
       );
 
-      // Draw bar chart summarising the absolute amounts per category.  This
-      // matches the original design but is encapsulated in a function for
-      // clarity.
       new Chart(ctx, {
         type: "bar",
         data: {
@@ -85,50 +76,12 @@ function loadReportChart() {
         },
         plugins: [ChartDataLabels],
       });
-
-      // Draw a doughnut chart showing the relative share of each category.  This
-      // leverages the same labels, amounts and colours to ensure consistency
-      // between charts.  Displaying the legend on the bottom improves
-      // readability, especially on mobile devices.
-      const ctxPie = document
-        .getElementById("categoryChart")
-        .getContext("2d");
-      new Chart(ctxPie, {
-        type: "doughnut",
-        data: {
-          labels,
-          datasets: [
-            {
-              data: data.amounts,
-              backgroundColor: backgroundColors,
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true, position: "bottom" },
-            datalabels: {
-              color: "black",
-              font: { weight: "bold", size: 14 },
-              formatter: (value) => value + " €",
-            },
-          },
-        },
-        plugins: [ChartDataLabels],
-      });
     })
     .catch((error) => console.error("Error loading chart data:", error));
 }
 
-// Ensure the chart is loaded on page load.  This replicates the original
-// behaviour of assigning loadReportChart to window.onload.
 window.onload = loadReportChart;
 
-// Initialise the month picker and menu controls.  This block preserves
-// existing interactive functionality such as navigation, menu toggling and
-// account actions.
 document.addEventListener("DOMContentLoaded", function () {
   flatpickr("#monthPicker", {
     dateFormat: "Y-m",
