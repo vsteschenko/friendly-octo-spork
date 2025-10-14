@@ -292,7 +292,6 @@ def report():
         income = cur.fetchone()[0]
         get_db().commit()
         cur.close()
-        print(f'{expenses} AND {income}')
         if expenses == None:
             expenses = 0
         if income == None:
