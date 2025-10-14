@@ -16,6 +16,9 @@ app = Flask(__name__)
 app.config["DATABASE"] = os.getenv("DATABASE")
 app.secret_key = os.getenv("SECRET_KEY")
 
+app.config["TEMPLATES_AUTO_RELOAD"] = False
+app.config["DEBUG"] = False
+
 log_file = 'app.log'
 handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
 handler.setLevel(logging.INFO)
