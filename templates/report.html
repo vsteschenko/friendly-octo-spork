@@ -3,21 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!--
-      Keeping the existing page title and external resources the same ensures the
-      report page matches the rest of the application.  The fonts, Chart.js
-      library and Flatpickr date picker are all loaded here just like the
-      original template.
-    -->
     <title>Ledger</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <!-- Main stylesheet for report page.  See static/styles-report.css for details. -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='styles-report.css') }}"
     />
-    <!-- Date picker styles and scripts -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
@@ -28,13 +20,9 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css"
     />
-    <!-- Favicon for PWA support -->
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   </head>
   <body>
-    <!-- Navigation bar with month picker and user menu.  This is largely
-         untouched from the original design to preserve the familiar UI
-         elements users are accustomed to. -->
     <nav>
       <button class="index">
         <svg
@@ -53,14 +41,12 @@
           />
         </svg>
       </button>
-      <!-- Month/year picker.  Value is pre-populated using Jinja variables. -->
       <input
         type="text"
         id="monthPicker"
         placeholder="Select month and year"
         value="{{ '%04d'|format(current_year) }}-{{ '%02d'|format(current_month) }}"
       />
-      <!-- Menu toggle button -->
       <button class="menu-toggle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -78,9 +64,6 @@
           />
         </svg>
       </button>
-      <!-- Hidden menu.  This section uses absolute positioning and is revealed
-           by the menu-toggle button via JavaScript.  User name and account
-           actions live here. -->
       <div class="menu">
         <div class="menu-top">
           <div
@@ -146,7 +129,6 @@
             </svg>
           </button>
         </div>
-        <!-- Menu buttons for account actions -->
         <div class="menu-button" id="change-password">
           <button
             style="
@@ -276,27 +258,6 @@
         <canvas id="reportChart"></canvas>
       </div>
     </div>
-    <!-- <div class="table">
-      <table>
-        <tr>
-          <th>Metric</th>
-          <th></th>
-        </tr>
-        <tr>
-          <td>Balance</td>
-          <td>{{ (income + expenses) | currency }}</td>
-        </tr>
-        <tr>
-          <td>Expenses</td>
-          <td>{{ expenses | currency }}</td>
-        </tr>
-        <tr>
-          <td>Income</td>
-          <td>{{ income | currency }}</td>
-        </tr>
-      </table>
-    </div> -->
-
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>
 </html>
