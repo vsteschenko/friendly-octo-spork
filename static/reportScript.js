@@ -7,78 +7,100 @@ function getQueryParam(name) {
   return urlParams.get(name);
 }
 
+let reportChartInstance = null;
+
 function loadReportChart() {
   const year = getQueryParam("year") || new Date().getFullYear();
   const month = getQueryParam("month") || new Date().getMonth() + 1;
+
   fetch(`/report_chart?year=${year}&month=${month}`)
     .then((response) => response.json())
     .then((data) => {
-      const ctx = document
-        .getElementById("reportChart")
-        .getContext("2d");
       const labels = data.categories;
-      const categoryColors = {
-        grocery: "#ff82a0",
-        rent: "#bedaf1",
-        utilities: "#f1d3b2",
-        transport: "#ffe0e6",
-        insurance: "#d9c6e5",
-        dining: "#b9bfc6",
-        entertainment: "#c1eccf",
-        shopping: "#6eb5ff",
-        health: "#fff5ba",
-        beauty: "#ace7ff",
-        loans: "#9ad4bc",
-        credit_card: "#d98880",
-        savings: "#b9bafd",
-        education: "#fcf0e4",
-        pets: "#fbcfea",
-        home_maintenance: "#c2ecd6",
-        gifts: "#ffa9f7",
-        travel: "#ffffb5",
-        subscriptions: "#ffd4b7",
-        other: "#b7f2ff",
-      };
-      const backgroundColors = labels.map(
-        (category) => categoryColors[category] || "#cccccc"
-      );
+      const container = document.querySelector(".reportChart");
+      const canvas = document.getElementById("reportChart");
+      const PER_BAR = 60;
+      const BAR_THICKNESS = 28;
+      const CHART_HEIGHT = 320;
 
-      new Chart(ctx, {
+      const targetWidth = Math.max(PER_BAR * labels.length, container.clientWidth);
+      canvas.width = targetWidth;
+      canvas.height = CHART_HEIGHT;
+
+      const ctx = canvas.getContext("2d");
+
+      const categoryColors = {
+        grocery: "#ff82a0", rent: "#bedaf1", utilities: "#f1d3b2", transport: "#ffe0e6",
+        insurance: "#d9c6e5", dining: "#b9bfc6", entertainment: "#c1eccf", shopping: "#6eb5ff",
+        health: "#fff5ba", beauty: "#ace7ff", loans: "#9ad4bc", credit_card: "#d98880",
+        savings: "#b9bafd", education: "#fcf0e4", pets: "#fbcfea", home_maintenance: "#c2ecd6",
+        gifts: "#ffa9f7", travel: "#ffffb5", subscriptions: "#ffd4b7", other: "#b7f2ff",
+      };
+      const backgroundColors = labels.map((c) => categoryColors[c] || "#cccccc");
+
+      if (reportChartInstance) {
+        reportChartInstance.destroy();
+      }
+
+      const shortLabels = labels.map(l => (l.length > 14 ? l.slice(0, 14) + "…" : l));
+
+      reportChartInstance = new Chart(ctx, {
         type: "bar",
         data: {
-          labels,
-          datasets: [
-            {
-              label: "Expenses",
-              data: data.amounts,
-              backgroundColor: backgroundColors,
-              borderWidth: 1,
-            },
-          ],
+          labels: shortLabels,
+          datasets: [{
+            label: "Expenses",
+            data: data.amounts,
+            backgroundColor: backgroundColors,
+            borderWidth: 1,
+            barThickness: BAR_THICKNESS,
+            maxBarThickness: BAR_THICKNESS,
+            categoryPercentage: 0.9,
+            barPercentage: 0.9,
+          }],
         },
         options: {
-          responsive: true,
+          responsive: false,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             datalabels: {
               color: "black",
               font: { weight: "bold", size: 14 },
+              clamp: true,
+              clip: true,
+              anchor: 'end',
+              align: 'end',
+              offset: 4,
+              formatter: (v) => `${v} €`,
             },
+            tooltip: { enabled: true },
           },
           scales: {
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: labels.length > 15 ? 45 : 0,
+                minRotation: 0,
+                font: { size: labels.length > 24 ? 10 : 12 }
+              },
+              grid: { display: false },
+            },
             y: {
               beginAtZero: true,
-              ticks: {
-                callback: (value) => value + " €",
-              },
+              ticks: { callback: (value) => value + " €" },
+              grid: { drawBorder: false },
             },
           },
+          layout: { padding: { right: 8 } },
         },
         plugins: [ChartDataLabels],
       });
     })
     .catch((error) => console.error("Error loading chart data:", error));
 }
+
+window.onload = loadReportChart;
 
 window.onload = loadReportChart;
 

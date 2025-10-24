@@ -57,16 +57,21 @@
     }
 
     .chartBorder {
-        border: 1px solid rgb(235, 233, 233);
-        border-radius: 15px;
-        width: 100%;
-        margin-bottom: 10px;
+      border: 1px solid rgb(235, 233, 233);
+      border-radius: 15px;
+      width: 100%;
+      margin-bottom: 10px;
     }
 
     .reportChart {
-        padding: 10px;
-        height: 100%;
+      padding: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+
+      scrollbar-width: none;
     }
+    .reportChart::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
     .reportContainer {
         border: 1px solid rgb(235, 233, 233);
@@ -81,34 +86,6 @@
             max-width: 600px;
             }
     }
-
-    /* .table {
-        margin: 10px 0px;
-        overflow-y: auto;
-        height: 100vh;
-        border: 1px solid rgb(235, 233, 233);
-        border-radius: 15px;
-        width: 100%;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-      }
-
-      th, td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid rgb(235, 233, 233);
-      }
-
-      th {
-        background-color: #f1f1f1;
-      }
-
-      tr:hover {
-        background-color: rgb(235, 233, 233);
-      } */
-
        .menu {
           display: none;
           border: 1px solid rgb(235, 233, 233);
