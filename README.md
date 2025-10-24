@@ -1,6 +1,6 @@
 # Ledger Documentation
 
-**Ledger** is an open-source personal finance tracking web application. It helps users track income and expenses, view reports, and analyze their finances over time — all with full control over their data.
+**Ledger** is a personal finance tracking web application. It helps me track income and expenses, and analyze my spending.
 
 ---
 
@@ -8,11 +8,7 @@
 
 - Add, edit, and delete income and expense records
 - Categorize transactions
-- Date-based filtering
 - Monthly and yearly summaries
-- Interactive charts via Chart.js
-- Secure authentication with hashed passwords
-- SQLite database (runs locally, no setup needed)
 
 ---
 
