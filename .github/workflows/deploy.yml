@@ -25,15 +25,21 @@ jobs:
       - name: Deploy to server
         run: |
           ssh -i ~/.ssh/id_rsa ledgeradmin@134.122.56.15 << 'EOF'
-            set -e
-            sudo bash -c "
+            set -euo pipefail
+            sudo bash -c '
+              set -euo pipefail
               cd /root/friendly-octo-spork || exit 1
-              git reset --hard HEAD
+
+              git fetch --all
+              git reset --hard origin/main
               git clean -fd
-              git pull origin main
-              python3 -m venv venv
+
+              [ -d venv ] || python3 -m venv venv
               source venv/bin/activate
+              python -m pip install --upgrade pip wheel setuptools
               pip install -r requirements.txt
-              systemctl restart gunicorn
-            "
+
+              systemctl restart ledger.service
+              systemctl status ledger.service --no-pager || true
+            '
           EOF
