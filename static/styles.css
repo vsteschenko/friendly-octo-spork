@@ -18,12 +18,12 @@
   font-family: 'Roboto', sans-serif;
 }
 
-.table {
+.table, .sumByCategory {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.table::-webkit-scrollbar {
+.table::-webkit-scrollbar, .sumByCategory::-webkit-scrollbar {
   display: none;
 }
 
