@@ -79,10 +79,8 @@ function loadReportChart() {
           scales: {
             x: {
               ticks: {
-                autoSkip: false,
-                maxRotation: labels.length > 15 ? 45 : 0,
-                minRotation: 0,
-                font: { size: labels.length > 24 ? 10 : 12 }
+                maxRotation: 45,
+                minRotation: 45,
               },
               grid: { display: false },
             },
