@@ -16,7 +16,37 @@ function loadReportChart() {
   fetch(`/report_chart?year=${year}&month=${month}`)
     .then((response) => response.json())
     .then((data) => {
-      const labels = data.categories;
+      const labels = data.categories.slice();
+      const values = data.categories.slice();
+      const expenseCategories = [
+        { value: "beauty", label: "Beauty & Personal Care" },
+        { value: "education", label: "Childcare & Education" },
+        { value: "credit_card", label: "Credit Card Payments" },
+        { value: "dining", label: "Dining Out" },
+        { value: "entertainment", label: "Entertainment" },
+        { value: "gifts", label: "Gifts & Donations" },
+        { value: "grocery", label: "Grocery" },
+        { value: "health", label: "Health & Fitness" },
+        { value: "home_maintenance", label: "Home Maintenance" },
+        { value: "insurance", label: "Insurance" },
+        { value: "loans", label: "Loan Payments" },
+        { value: "pets", label: "Pets" },
+        { value: "rent", label: "Rent" },
+        { value: "savings", label: "Savings & Investments" },
+        { value: "shopping", label: "Shopping" },
+        { value: "subscriptions", label: "Subscriptions & Memberships" },
+        { value: "transport", label: "Transportation" },
+        { value: "travel", label: "Travel" },
+        { value: "utilities", label: "Utilities" },
+        { value: "work", label: "Work" },
+        { value: "taxes", label: "Taxes" },
+        { value: "other", label: "Other" },
+      ];
+      labels.forEach((c, i) => {
+        const found = expenseCategories.find(ec => ec.value === c);
+        if (found) labels[i] = found.label;
+      });
+
       const container = document.querySelector(".reportChart");
       const canvas = document.getElementById("reportChart");
       const PER_BAR = 60;
@@ -30,24 +60,41 @@ function loadReportChart() {
       const ctx = canvas.getContext("2d");
 
       const categoryColors = {
-        grocery: "#ff82a0", rent: "#bedaf1", utilities: "#f1d3b2", transport: "#ffe0e6",
-        insurance: "#d9c6e5", dining: "#b9bfc6", entertainment: "#c1eccf", shopping: "#6eb5ff",
-        health: "#fff5ba", beauty: "#ace7ff", loans: "#9ad4bc", credit_card: "#d98880",
-        savings: "#b9bafd", education: "#fcf0e4", pets: "#fbcfea", home_maintenance: "#c2ecd6",
-        gifts: "#ffa9f7", travel: "#ffffb5", subscriptions: "#ffd4b7", other: "#b7f2ff",
+        grocery: "#ff82a0", 
+        rent: "#bedaf1", 
+        utilities: "#f1d3b2", 
+        transport: "#ffe0e6",
+        insurance: "#d9c6e5", 
+        dining: "#b9bfc6", 
+        entertainment: "#c1eccf", 
+        shopping: "#6eb5ff",
+        health: "#fff5ba", 
+        beauty: "#ace7ff", 
+        loans: "#9ad4bc", 
+        credit_card: "#d98880",
+        savings: "#b9bafd", 
+        education: "#fcf0e4", 
+        pets: "#fbcfea", 
+        home_maintenance: "#c2ecd6",
+        gifts: "#ffa9f7", 
+        travel: "#ffffb5", 
+        subscriptions: "#ffd4b7", 
+        other: "#b7f2ff",
+        work: "#cfd8dc",   // добавлено
+        taxes: "#ffd180"
       };
-      const backgroundColors = labels.map((c) => categoryColors[c] || "#cccccc");
+      const backgroundColors = values.map(v => categoryColors[v] || "#cccccc");
 
       if (reportChartInstance) {
         reportChartInstance.destroy();
       }
 
-      const shortLabels = labels.map(l => (l.length > 14 ? l.slice(0, 14) + "…" : l));
+      // const shortLabels = labels.map(l => (l.length > 14 ? l.slice(0, 14) + "…" : l));
 
       reportChartInstance = new Chart(ctx, {
         type: "bar",
         data: {
-          labels: shortLabels,
+          labels: labels,
           datasets: [{
             label: "Expenses",
             data: data.amounts,
