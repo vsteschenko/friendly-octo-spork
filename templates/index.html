@@ -354,7 +354,7 @@
         </tr>
         {% for line in sum_by_categories %}
         <tr>
-          <td>{{ line[0]|capitalize }}</td>
+          <td>{{ line[0]| replace('_', ' ') | capitalize }}</td>
           <td>{{ line[1] | currency }}</td>
         </tr>
         {% endfor %}
