@@ -196,8 +196,6 @@ def index():
             GROUP BY category
             """, (user_id, start_of_day, end_of_day))
         sum_by_categories = cur.fetchall()
-        # change categories
-        # categories = [category_name[category] for category in categories]
  
         cur.execute("""
             SELECT SUM(amount) 
@@ -266,9 +264,6 @@ def expenses_by_category():
     data = cur.fetchall()
     cur.close()
     categories = [row[0] for row in data]
-
-    # categories = [category_name[category] for category in categories]
-
     amounts = [round(abs(float(row[1])), 2) for row in data]
     real_amounts = amounts
     total = sum(amounts)
@@ -642,6 +637,39 @@ def reset_password():
 @app.route("/ledger", methods=['GET'])
 def ledger():
     return render_template('ledger.html')
+
+@app.route("/transactions_by_categories", methods=['GET'])
+def transactions_by_categories():
+    if "email" not in session:
+        return redirect(url_for("index"))
+    email = session['email']
+    user_id = get_user_id(email)
+    category = request.args.get("category")
+    year = int(request.args.get("year", datetime.now().year))
+    month = int(request.args.get("month", datetime.now().month))
+
+    if not category:
+        return jsonify({"error": "category is required"}), 400
+
+    first_day = datetime(year, month, 1, 0, 0, 0)
+    last_day_num = monthrange(year, month)[1]
+    last_day = datetime(year, month, last_day_num, 23, 59, 59)
+
+    cur = get_db().cursor()
+    cur.execute("SELECT amount, timestamp, category, place FROM transactions WHERE user_id=? AND type='expense' AND category=? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC", (user_id, category, first_day, last_day))
+    rows = cur.fetchall()
+    cur.close()
+
+    transactions = [
+        {
+            "amount": float(amount),
+            "timestamp": timestamp,
+            "category": category,
+            "place": place,
+        }
+        for amount, timestamp, category, place in rows
+    ]
+    return jsonify(transactions)
 
 @app.route("/delete_account", methods=['GET', 'POST'])
 def delete_account():

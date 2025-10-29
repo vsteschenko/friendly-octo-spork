@@ -109,6 +109,12 @@ function loadReportChart() {
         options: {
           responsive: false,
           maintainAspectRatio: false,
+          onClick: (event, elements) => {
+            if (!elements.length) return;
+            const { index } = elements[0];
+            const categoryCode = values[index];
+            showTransactions(categoryCode, Number(year), Number(month))
+          },
           plugins: {
             legend: { display: false },
             datalabels: {
@@ -220,3 +226,39 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutFunc.addEventListener("click", logout);
   }
 });
+
+function formatTxTime(timestamp) {
+  return new Date(timestamp).toLocaleString("default", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function showTransactions(category, year, month) {
+  fetch(`/transactions_by_categories?category=${category}&year=${year}&month=${month}`)
+    .then(res => res.json())
+    .then(items => {
+      const table = document.querySelector("#categoryTransactions tbody");
+      if (!table) return;
+      table.innerHTML = "";
+
+      if (!items.length) {
+        table.innerHTML = `<tr><td colspan="4">No transactions</td></tr>`;
+        return;
+      }
+
+      items.forEach((tx, idx) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${tx.category}</td>
+          <td>${tx.place || "-"}</td>
+          <td>${formatTxTime(tx.timestamp)}</td>
+        `;
+        table.appendChild(row);
+      });
+    })
+    .catch(err => console.error("Failed to load transactions:", err));
+}

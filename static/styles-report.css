@@ -68,10 +68,9 @@
       overflow-x: auto;
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
-      
       scrollbar-width: none;
     }
-    .reportChart::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+    .breakdownBorder::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
     .reportContainer {
         border: 1px solid rgb(235, 233, 233);
@@ -80,6 +79,49 @@
         height: 100vh;
         margin-bottom: 10px;
     }
+
+    .breakdownBorder {
+      border: 1px solid rgb(235, 233, 233);
+      border-radius: 15px;
+      overflow: hidden;
+      display: flex;
+      width: 100%;
+      flex-direction: column;
+      height: 100%;
+      margin-bottom: 10px;
+      max-width: 600px;
+      overflow-y: auto;
+    }
+  .table {
+    /* margin: 10px 0px; */
+    overflow-y: auto;
+    height: calc(100vh - 50px - 80px);
+    border: 1px solid rgb(235, 233, 233);
+    border-radius: 15px;
+    width: 100%;
+    margin-bottom: 80px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgb(235, 233, 233);
+  }
+
+  th {
+    background-color: #f1f1f1;
+  }
+
+  tr:hover {
+    background-color: rgb(235, 233, 233);
+  }
+  #categoryTransactions tbody tr {
+    height: 41px;
+  }
 
     @media (min-width: 768px) {
         nav, .reportContainer, .chartBorder, .table{

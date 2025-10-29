@@ -13,6 +13,7 @@
   font-stretch: 75% 100%;
   font-style: italic;
 }
+.reportChart::-webkit-scrollbar { display: none; }
 
 * {
   font-family: 'Roboto', sans-serif;
