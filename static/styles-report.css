@@ -87,7 +87,7 @@
       display: flex;
       width: 100%;
       flex-direction: column;
-      height: auto;
+      min-height: 40vh;
       margin-bottom: 10px;
       max-width: 600px;
       overflow-y: auto;
@@ -98,7 +98,6 @@
     border-radius: 15px;
     width: 100%;
     margin-bottom: 80px;
-    height: 30vh;
   }
   table {
     border-collapse: collapse;
