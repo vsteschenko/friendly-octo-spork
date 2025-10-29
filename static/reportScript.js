@@ -253,6 +253,7 @@ function showTransactions(category, year, month) {
       items.forEach((tx, idx) => {
         const row = document.createElement("tr");
         row.innerHTML = `
+          <td>${tx.amount}</td>
           <td>${tx.category}</td>
           <td>${tx.place || "-"}</td>
           <td>${formatTxTime(tx.timestamp)}</td>
