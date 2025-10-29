@@ -80,7 +80,7 @@ function loadReportChart() {
         travel: "#ffffb5", 
         subscriptions: "#ffd4b7", 
         other: "#b7f2ff",
-        work: "#cfd8dc",   // добавлено
+        work: "#cfd8dc",
         taxes: "#ffd180"
       };
       const backgroundColors = values.map(v => categoryColors[v] || "#cccccc");

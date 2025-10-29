@@ -254,7 +254,7 @@
         {% for tx in txs %}
         <tr>
           <td>{{ tx[0] | currency }}</td>
-          <td>{{ tx[4] | capitalize }}</td>
+          <td>{{ tx[4] | replace('_',' ') | capitalize}}</td>
           <td>{{ tx[5] }}</td>
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
           <td class="edit">

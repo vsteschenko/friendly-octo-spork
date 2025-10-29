@@ -218,7 +218,6 @@ function loadExpenseChart() {
         .getElementById("expenseChart")
         .getContext("2d");
 
-      // Уничтожаем предыдущий график если он существует
       if (expenseChartInstance) {
         expenseChartInstance.destroy();
       }
