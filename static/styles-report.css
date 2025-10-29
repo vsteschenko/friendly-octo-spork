@@ -93,9 +93,7 @@
       overflow-y: auto;
     }
   .table {
-    /* margin: 10px 0px; */
     overflow-y: auto;
-    height: calc(100vh - 50px - 80px);
     border: 1px solid rgb(235, 233, 233);
     border-radius: 15px;
     width: 100%;
@@ -119,8 +117,8 @@
   tr:hover {
     background-color: rgb(235, 233, 233);
   }
-  #categoryTransactions tbody tr {
-    height: 41px;
+  tr {
+    max-height: 41px;
   }
 
     @media (min-width: 768px) {

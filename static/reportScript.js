@@ -246,7 +246,7 @@ function showTransactions(category, year, month) {
       table.innerHTML = "";
 
       if (!items.length) {
-        table.innerHTML = `<tr><td colspan="4">No transactions</td></tr>`;
+        table.innerHTML = `<tr><td></td></tr>`;
         return;
       }
 
