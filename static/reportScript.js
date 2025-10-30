@@ -249,12 +249,35 @@ function showTransactions(category, year, month) {
         table.innerHTML = `<tr><td></td></tr>`;
         return;
       }
-
+      const expenseCategories = {
+        "beauty": "Beauty & Personal Care",
+        "education": "Childcare & Education",
+        "credit_card": "Credit Card Payments",
+        "dining": "Dining Out",
+        "entertainment": "Entertainment",
+        "gifts": "Gifts & Donations",
+        "grocery": "Grocery",
+        "health": "Health & Fitness",
+        "home_maintenance": "Home Maintenance",
+        "insurance": "Insurance",
+        "loans": "Loan Payments",
+        "pets": "Pets",
+        "rent": "Rent",
+        "savings": "Savings & Investments",
+        "shopping": "Shopping",
+        "subscriptions": "Subscriptions & Memberships",
+        "transport": "Transportation",
+        "travel": "Travel",
+        "utilities": "Utilities",
+        "work": "Work",
+        "taxes": "Taxes",
+        "other": "Other"
+      };
       items.forEach((tx, idx) => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${tx.amount}</td>
-          <td>${tx.category}</td>
+          <td>${expenseCategories[tx.category]}</td>
           <td>${tx.place || "-"}</td>
           <td>${formatTxTime(tx.timestamp)}</td>
         `;
