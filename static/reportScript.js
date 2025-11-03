@@ -281,8 +281,20 @@ function showTransactions(category, year, month) {
           <td>${tx.place || "-"}</td>
           <td>${formatTxTime(tx.timestamp)}</td>
         `;
+        row.addEventListener("click", () => {
+          const txDate = new Date(tx.timestamp);
+          if (Number.isNaN(txDate.getTime())) return;
+          const year = txDate.getFullYear();
+          const month = txDate.getMonth() + 1;
+          const day = txDate.getDate();
+          moveToDate(year, month, day);
+        });
         table.appendChild(row);
       });
     })
     .catch(err => console.error("Failed to load transactions:", err));
+}
+
+function moveToDate(year, month, day) {
+  window.location.href = `/?year=${year}&month=${month}&day=${day}`;
 }
