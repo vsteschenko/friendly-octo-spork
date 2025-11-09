@@ -10,10 +10,21 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 import logging
 from logging.handlers import RotatingFileHandler
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 8,
+    PREFERRED_URL_SCHEME="https",
+)
+
 app.config["DATABASE"] = os.getenv("DATABASE")
 app.secret_key = os.getenv("SECRET_KEY")
 csrf = CSRFProtect(app)
