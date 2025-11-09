@@ -478,22 +478,26 @@ def login():
         cur.close()
 
         if not user:
-            error = "User with this email doesn't exist"
-            app.logger.warning(f'Failed login attempt - User not found. Email: {email}')
-            return render_template('login.html', error=error)
+            app.logger.warning(f'Failed login attempt - User not found or wrong password. Email: {email}')
+            return render_template('login.html', error="Invalid email or password")
 
-        if bcrypt.checkpw(password.encode('utf-8'), user[0]):
-            if user[1] == 0:
-                error = 'Please verify your email'
-                app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
-                return render_template('login.html', error=error)
-            session['email'] = email
-            app.logger.info(f'{email} successfully logged in')
-            return redirect(url_for('index'))
-        else:
-            error = 'Invalid email or password'
-            app.logger.warning(f'Failed login attempt - Incorrect password. Email: {email}')
-            return render_template('login.html', error=error)
+        hashed_pw, is_verified = user
+
+        if not bcrypt.checkpw(password.encode('utf-8'), hashed_pw):
+            app.logger.warning(f'Failed login attempt - Wrong password. Email: {email}')
+            return render_template('login.html', error="Invalid email or password")
+
+        if is_verified == 0:
+            app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
+            return render_template('login.html', error="Please verify your email")
+        
+        session.clear()
+        session['email'] = email
+        session.permanent = True
+
+        app.logger.info(f'{email} successfully logged in')
+        return redirect(url_for('index'))
+
     return render_template('login.html')
 
 @app.route('/logout')
