@@ -8,8 +8,9 @@
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
-    <form method="post">
+    <form method="post" action="{{ url_for('signup') }}">
         <h1>Sign up</h1>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" name="email" placeholder="Email" id="field">
         <input type="password" name="password" placeholder="Password" id="field">
         <input type="password" name="confirm_password" placeholder="Confirm Password" id="field">

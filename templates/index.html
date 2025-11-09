@@ -14,6 +14,7 @@
   <body data-year="{{ current_year }}" data-month="{{ '%02d'|format(current_month) }}" data-day="{{ '%02d'|format(current_day) }}" data-sum="{{ sum }}">
     <nav>
       <form method="get" action="{{ url_for('index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="year" value="{{ current_year }}" />
         <input type="hidden" name="month" value="{{ current_month }}" />
         <button
@@ -259,6 +260,7 @@
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
           <td class="edit">
             <form method="POST" action="{{ url_for('update_tx') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
               <input type="hidden" name="type" value="{{ tx[1] }}" />
               <input type="hidden" name="place" value="{{ tx[5] }}" />
@@ -304,10 +306,8 @@
             </form>
           </td>
           <td class="delete">
-            <form
-              method="POST"
-              action="{{ url_for('delete_tx', tx_id=tx[2]) }}"
-            >
+            <form method="POST" action="{{ url_for('delete_tx', tx_id=tx[2]) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="tx_id" value="{{ tx[2] }}" />
               <input type="hidden" name="year" value="{{ current_year }}" />
               <input type="hidden" name="month" value="{{ current_month }}" />
@@ -384,6 +384,7 @@
         <span class="close-btn">&times;</span>
         <h2>New Transaction</h2>
         <form method="post" id="txForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="tx_id" id="txId" />
           <input type="hidden" name="year" value="{{ current_year }}" />
           <input type="hidden" name="month" value="{{ current_month }}" />

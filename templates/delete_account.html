@@ -20,7 +20,8 @@
         </ul>
         <p>To confirm deletion, please enter your email address below. A confirmation link will be sent to your inbox.</p>
         
-        <form method="POST">
+        <form method="POST" action="{{ url_for('delete_account') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="email">Confirm your email address:</label>
             <input type="email" id="email" name="email" required placeholder="Enter your email to confirm">
             <button type="submit">Confirm</button>

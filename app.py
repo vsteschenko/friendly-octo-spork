@@ -1,4 +1,5 @@
 from flask import Flask, render_template, session, request, redirect, url_for, g, jsonify, make_response
+from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
 from datetime import datetime
@@ -15,6 +16,8 @@ load_dotenv()
 app = Flask(__name__)
 app.config["DATABASE"] = os.getenv("DATABASE")
 app.secret_key = os.getenv("SECRET_KEY")
+csrf = CSRFProtect(app)
+app.config["WTF_CSRF_TIME_LIMIT"] = 3600
 
 app.config["TEMPLATES_AUTO_RELOAD"] = False
 app.config["DEBUG"] = False

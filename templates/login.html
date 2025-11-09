@@ -8,8 +8,9 @@
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
-    <form method="post">
+    <form method="post" action="{{ url_for('login') }}">
         <h1>Ledger</h1>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" name="email" placeholder="Email" id="field">
         <input type="password" name="password" placeholder="Password" id="field">
         {% if error %}
@@ -19,6 +20,5 @@
         <input type="submit" value="Login" id="login">
         <a href="/signup">Don't have an account?</a>
     </form>
-    
 </body>
 </html>
