@@ -18,6 +18,12 @@ function loadReportChart() {
     .then((data) => {
       const labels = data.categories.slice();
       const values = data.categories.slice();
+
+      let maxValue = 0;
+      if (data.amounts && data.amounts.length > 0) {
+        maxValue = Math.max(...data.amounts);
+      }
+      const maxWithPadding = maxValue * 1.10;
       const expenseCategories = [
         { value: "beauty", label: "Beauty & Personal Care" },
         { value: "education", label: "Childcare & Education" },
@@ -139,6 +145,7 @@ function loadReportChart() {
             },
             y: {
               beginAtZero: true,
+              suggestedMax: maxWithPadding,
               ticks: { callback: (value) => value + " €" },
               grid: { drawBorder: false },
             },
@@ -151,7 +158,7 @@ function loadReportChart() {
     .catch((error) => console.error("Error loading chart data:", error));
 }
 
-window.onload = loadReportChart;
+// window.onload = loadReportChart;
 
 window.onload = loadReportChart;
 
