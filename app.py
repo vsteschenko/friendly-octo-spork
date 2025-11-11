@@ -39,7 +39,6 @@ handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-
 app.logger.addHandler(handler)
 
 console_handler = logging.StreamHandler()
