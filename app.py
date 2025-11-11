@@ -45,7 +45,6 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 app.logger.addHandler(console_handler)
-
 app.logger.setLevel(logging.INFO)
 
 category_name = {
