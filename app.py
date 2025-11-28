@@ -313,6 +313,25 @@ def report():
         return render_template('report.html', current_year=year, current_month=month, expenses=expenses, income=income, username=username)
     return redirect(url_for('login'))
 
+@app.route('/annual_report', methods=["GET", "POST"])
+def annual_report():
+    if "email" not in session:
+        return redirect(url_for('login'))
+    year = request.args.get('year', type=int, default=datetime.now().year)
+    month = request.args.get('month', type=int, default=datetime.now().month)
+    email = session["email"]
+    username = email.split("@")[0]
+    user_id = get_user_id(email)
+    timestamp_pattern = f"{year}%"
+
+    cur = get_db().cursor()
+    cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ?", (user_id, timestamp_pattern))
+    expense = cur.fetchone()[0]
+    cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='income' AND timestamp LIKE ?", (user_id, timestamp_pattern))
+    income = cur.fetchone()[0]
+
+    return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income)
+
 @app.route('/report_chart', methods=['GET'])
 def report_chart():
     if 'email' in session:

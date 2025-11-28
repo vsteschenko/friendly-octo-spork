@@ -277,6 +277,9 @@ window.onload = loadExpenseChart;
 function showReport() {
   window.location.href = "/report";
 }
+function showAnnualReport(){
+  window.location.href= "/annual_report"
+}
 
 function sumByCategory() {
   const report = document.getElementsByClassName("report")[0];
@@ -361,6 +364,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const showReportFunc = document.getElementsByClassName('showReport')[0]
   if (showReportFunc) {
     showReportFunc.addEventListener("click", showReport)
+  }
+  const showAnnualReportFunc = document.getElementsByClassName('showAnnualReport')[0]
+  if (showAnnualReportFunc) {
+    showAnnualReportFunc.addEventListener("click", showAnnualReport)
   }
   const logoutFunc = document.getElementById("logout")
   if (logoutFunc) {
