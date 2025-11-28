@@ -237,11 +237,19 @@
         </div>
       </div>
     </nav>
-    <div>
-      {{ expense }}
-    </div>
-    <div>
-      {{ income }}
+        <div class="summary-cards">
+      <div class="summary-card">
+        <span class="summary-label">Balance</span>
+        <span class="summary-value">{{ (income + expense) | currency }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Income</span>
+        <span class="summary-value">{{ income | currency }}</span>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">Expenses</span>
+        <span class="summary-value">{{ expense | currency }}</span>
+      </div>
     </div>
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>

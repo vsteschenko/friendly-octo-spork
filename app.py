@@ -26,13 +26,15 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    TELPATES_AUTO_RELOAD = True
+    TEMPLATES_AUTO_RELOAD = True
     SESSION_COOKIE_SECURE = False
     PREFERRED_URL_SCHEME = "http"
+    BASE_URL = "http://127.0.0.1:5000"
 
 class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     PREFERRED_URL_SCHEME = "https"
+    BASE_URL = "https://ledger.vsteschenko.me"
 
 
 app = Flask(__name__)
@@ -117,19 +119,19 @@ def email_validator(email):
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
-# <a href="http://127.0.0.1:5000/verify?token={token}">Verify Email</a>
-# <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
 def send_verification_email(email, token):
+    base_url = app.config["BASE_URL"]
+    new_url = f"{base_url}/verify?token={token}"
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Verify your email"
     sender = {"name": "Ledger", "email": "slava@vsteschenko.me"}
-    to = [{"email": email}]
+    to = [{"email": email}]   
     html_content = f"""
     <html>
       <body>
         <p>Hi!</p>
         <p>Verify your email by clicking the link below:</p>
-        <a href="https://ledger.vsteschenko.me/verify?token={token}">Verify Email</a>
+        <a href={new_url}>Verify Email</a>
       </body>
     </html>
     """
@@ -341,8 +343,12 @@ def annual_report():
     cur = get_db().cursor()
     cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ?", (user_id, timestamp_pattern))
     expense = cur.fetchone()[0]
+    if expense is None:
+        expense = 0
     cur.execute("SELECT SUM(amount) FROM transactions WHERE user_id=? AND type='income' AND timestamp LIKE ?", (user_id, timestamp_pattern))
     income = cur.fetchone()[0]
+    if income is None:
+        income = 0
 
     return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income)
 
@@ -624,10 +630,9 @@ def forgot_password():
         return render_template('forgot_password.html', success="Password reset link sent to your email")
     return render_template('forgot_password.html')
 
-# <a href="http://127.0.0.1:5000/reset_password?token={token}">Reset Password</a>
-# <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
-
 def send_reset_password_email(email, token):
+    base_url = app.config["BASE_URL"]
+    new_url = f"{base_url}/reset_password?token={token}"
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Password Reset Request"
     sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
@@ -637,7 +642,7 @@ def send_reset_password_email(email, token):
       <body>
         <p>Hi!</p>
         <p>To reset your password, click the link below:</p>
-        <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
+        <a href={new_url}>Reset Password</a>
       </body>
     </html>
     """
@@ -722,13 +727,13 @@ def transactions_by_categories():
 
 @app.route("/delete_account", methods=['GET', 'POST'])
 def delete_account():
-    if 'email' not in session:
-        return redirect(url_for('login'))
-    
     token = request.args.get('token')
     if token:
         return handle_delete_confirmation(token)
     
+    if 'email' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         email = request.form.get('email', '').lower()
         session_email = session['email'].lower()
@@ -785,10 +790,9 @@ def handle_delete_confirmation(token):
         app.logger.error(f"Error deleting account for {email}: {e}")
         return "An error occurred while deleting your account", 500
 
-# <a href="http://127.0.0.1:5000/reset_password?token={token}">Reset Password</a>
-# <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
-
 def send_delete_account_email(email, token):
+    base_url = app.config["BASE_URL"]
+    new_url = f"{base_url}/delete_account?token={token}"
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
     subject = "Ledger Delete Account Request"
     sender = {"name": "Slava", "email": "slava@vsteschenko.me"}
@@ -799,8 +803,7 @@ def send_delete_account_email(email, token):
         <p>Hi!</p>
         <p>You have requested to delete your account. This action is irreversible and will permanently remove all your data.</p>
         <p>To confirm account deletion, click the link below:</p>
-        <a href="https://ledger.vsteschenko.me/reset_password?token={token}">Reset Password</a>
-        <p>If you did not request this, please ignore this email.</p>
+        <a href={new_url}>Delete account</a>
       </body>
     </html>
     """
