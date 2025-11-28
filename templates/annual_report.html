@@ -237,7 +237,7 @@
         </div>
       </div>
     </nav>
-        <div class="summary-cards">
+    <div class="summary-cards">
       <div class="summary-card">
         <span class="summary-label">Balance</span>
         <span class="summary-value">{{ (income + expense) | currency }}</span>
@@ -250,6 +250,24 @@
         <span class="summary-label">Expenses</span>
         <span class="summary-value">{{ expense | currency }}</span>
       </div>
+    </div>
+        <div class="breakdownBorder">
+      <table id="categoryTransactions" class="table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in sum_by_category%}
+            <tr>
+              <td>{{ category[0] }}</td>
+              <td>{{ category[1] | currency  }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
   </body>

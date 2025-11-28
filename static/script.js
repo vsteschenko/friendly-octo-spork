@@ -247,14 +247,7 @@ function loadExpenseChart() {
               display: false,
             },
             datalabels: {
-              color: "#fff",
-              font: {
-                weight: "bold",
-                size: 14,
-              },
-              formatter: (value, context) => {
-                return value.toFixed(1) + "%";
-              },
+              display: false
             },
             tooltip: {
               callbacks: {
