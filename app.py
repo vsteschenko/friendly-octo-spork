@@ -14,24 +14,38 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
+class BaseConfig:
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    DATABASE = os.getenv("DATABASE")
+    WTF_CSRF_TIME_LIMIT = 3600
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 8
+    TEMPLATES_AUTO_RELOAD = False
+    DEBUG = False
+
+class DevelopmentConfig(BaseConfig):
+    DEBUG = True
+    TELPATES_AUTO_RELOAD = True
+    SESSION_COOKIE_SECURE = False
+    PREFERRED_URL_SCHEME = "http"
+
+class ProductionConfig(BaseConfig):
+    SESSION_COOKIE_SECURE = True
+    PREFERRED_URL_SCHEME = "https"
+
+
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    PERMANENT_SESSION_LIFETIME=60 * 60 * 8,
-    PREFERRED_URL_SCHEME="https",
-)
+env = os.getenv("FLASK_ENV", "production").lower()
 
-app.config["DATABASE"] = os.getenv("DATABASE")
-app.secret_key = os.getenv("SECRET_KEY")
+if env == "development":
+    app.config.from_object(DevelopmentConfig)
+else:
+    app.config.from_object(ProductionConfig)
+
 csrf = CSRFProtect(app)
-app.config["WTF_CSRF_TIME_LIMIT"] = 3600
-
-app.config["TEMPLATES_AUTO_RELOAD"] = False
-app.config["DEBUG"] = False
 
 log_file = 'app.log'
 handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
