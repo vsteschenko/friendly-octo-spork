@@ -95,8 +95,6 @@ function loadReportChart() {
         reportChartInstance.destroy();
       }
 
-      // const shortLabels = labels.map(l => (l.length > 14 ? l.slice(0, 14) + "…" : l));
-
       reportChartInstance = new Chart(ctx, {
         type: "bar",
         data: {
@@ -157,8 +155,6 @@ function loadReportChart() {
     })
     .catch((error) => console.error("Error loading chart data:", error));
 }
-
-// window.onload = loadReportChart;
 
 window.onload = loadReportChart;
 
@@ -244,6 +240,31 @@ function formatTxTime(timestamp) {
   });
 }
 
+const expenseCategories = {
+  "beauty": "Beauty & Personal Care",
+  "education": "Childcare & Education",
+  "credit_card": "Credit Card Payments",
+  "dining": "Dining Out",
+  "entertainment": "Entertainment",
+  "gifts": "Gifts & Donations",
+  "grocery": "Grocery",
+  "health": "Health & Fitness",
+  "home_maintenance": "Home Maintenance",
+  "insurance": "Insurance",
+  "loans": "Loan Payments",
+  "pets": "Pets",
+  "rent": "Rent",
+  "savings": "Savings & Investments",
+  "shopping": "Shopping",
+  "subscriptions": "Subscriptions & Memberships",
+  "transport": "Transportation",
+  "travel": "Travel",
+  "utilities": "Utilities",
+  "work": "Work",
+  "taxes": "Taxes",
+  "other": "Other"
+};
+
 function showTransactions(category, year, month) {
   fetch(`/transactions_by_categories?category=${category}&year=${year}&month=${month}`)
     .then(res => res.json())
@@ -256,30 +277,6 @@ function showTransactions(category, year, month) {
         table.innerHTML = `<tr><td></td></tr>`;
         return;
       }
-      const expenseCategories = {
-        "beauty": "Beauty & Personal Care",
-        "education": "Childcare & Education",
-        "credit_card": "Credit Card Payments",
-        "dining": "Dining Out",
-        "entertainment": "Entertainment",
-        "gifts": "Gifts & Donations",
-        "grocery": "Grocery",
-        "health": "Health & Fitness",
-        "home_maintenance": "Home Maintenance",
-        "insurance": "Insurance",
-        "loans": "Loan Payments",
-        "pets": "Pets",
-        "rent": "Rent",
-        "savings": "Savings & Investments",
-        "shopping": "Shopping",
-        "subscriptions": "Subscriptions & Memberships",
-        "transport": "Transportation",
-        "travel": "Travel",
-        "utilities": "Utilities",
-        "work": "Work",
-        "taxes": "Taxes",
-        "other": "Other"
-      };
       items.forEach((tx, idx) => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -301,6 +298,49 @@ function showTransactions(category, year, month) {
     })
     .catch(err => console.error("Failed to load transactions:", err));
 }
+
+function showTransactionsYear(category, year) {
+  fetch(`/transactions_by_categories_year?category=${category}&year=${year}`)
+    .then(res => res.json())
+    .then(items => {
+      const table = document.querySelector("#categoryTransactionsYear tbody");
+      if (!table) return;
+      table.innerHTML = "";
+
+      if (!items.length) {
+        table.innerHTML = `<tr><td></td></tr>`;
+        return;
+      }
+      items.forEach((tx, idx) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${tx.amount}</td>
+          <td>${expenseCategories[tx.category]}</td>
+          <td>${tx.place || "-"}</td>
+          <td>${formatTxTime(tx.timestamp)}</td>
+        `;
+        row.addEventListener("click", () => {
+          const txDate = new Date(tx.timestamp);
+          if (Number.isNaN(txDate.getTime())) return;
+          const year = txDate.getFullYear();
+          const month = txDate.getMonth() + 1;
+          const day = txDate.getDate();
+          moveToDate(year, month, day);
+        });
+        table.appendChild(row);
+      });
+    })
+    .catch(err => console.error("Failed to load transactions:", err));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const year = getQueryParam("year") || new Date().getFullYear();
+  document.querySelectorAll(".show-more").forEach(btn => {
+    btn.addEventListener("click", () => {
+      showTransactionsYear(btn.dataset.category, year);
+    });
+  });
+});
 
 function moveToDate(year, month, day) {
   window.location.href = `/?year=${year}&month=${month}&day=${day}`;

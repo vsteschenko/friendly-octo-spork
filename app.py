@@ -351,7 +351,10 @@ def annual_report():
         income = 0
     cur.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ? GROUP BY category", (user_id, timestamp_pattern))
     sum_by_category = cur.fetchall()
-    print(sum_by_category)
+
+    # show more function
+    # cur.execute("SELECT timestamp, category, amount FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ? GROUP BY category", (user_id, timestamp_pattern))
+    # sum_by_category = cur.fetchall()
 
     return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income, sum_by_category=sum_by_category)
 
@@ -714,6 +717,47 @@ def transactions_by_categories():
 
     cur = get_db().cursor()
     cur.execute("SELECT amount, timestamp, category, place FROM transactions WHERE user_id=? AND type='expense' AND category=? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC", (user_id, category, first_day, last_day))
+    rows = cur.fetchall()
+    cur.close()
+
+    transactions = [
+        {
+            "amount": float(amount),
+            "timestamp": timestamp,
+            "category": category,
+            "place": place,
+        }
+        for amount, timestamp, category, place in rows
+    ]
+    return jsonify(transactions)
+
+@app.route("/transactions_by_categories_year", methods=['GET'])
+def transactions_by_categories_year():
+    if "email" not in session:
+        return redirect(url_for("index"))
+    email = session['email']
+    user_id = get_user_id(email)
+    category = request.args.get("category")
+    year = int(request.args.get("year", datetime.now().year))
+    if not category:
+        return jsonify({"error": "category is required"}), 400
+
+    start_of_year = datetime(year, 1, 1, 0, 0, 0)
+    end_of_year = datetime(year, 12, 31, 23, 59, 59)
+
+    cur = get_db().cursor()
+    cur.execute(
+        """
+        SELECT amount, timestamp, category, place
+        FROM transactions
+        WHERE user_id=?
+          AND type='expense'
+          AND category=?
+          AND timestamp BETWEEN ? AND ?
+        ORDER BY timestamp ASC
+        """,
+        (user_id, category, start_of_year, end_of_year),
+    )
     rows = cur.fetchall()
     cur.close()
 

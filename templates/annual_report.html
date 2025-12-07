@@ -257,6 +257,7 @@
           <tr>
             <th>Category</th>
             <th></th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -264,9 +265,23 @@
             <tr>
               <td>{{ category[0] }}</td>
               <td>{{ category[1] | currency  }}</td>
+              <td> <button data-category="{{ category[0] }}" class="show-more"> show more</button></td>
             </tr>
           {% endfor %}
         </tbody>
+      </table>
+    </div>
+    <div class="breakdownBorder">
+      <table id="categoryTransactionsYear" class="table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Category</th>
+            <th>Place</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
       </table>
     </div>
     <script src="{{ url_for('static', filename='reportScript.js') }}"></script>
