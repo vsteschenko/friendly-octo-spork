@@ -368,3 +368,37 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutFunc.addEventListener("click", logout)
   }
 });
+// SLIDER
+document.addEventListener("DOMContentLoaded", () => {
+  const canvas = document.getElementsByClassName("chartBorder")[0];
+  let touchStartX = null;
+  const swipeThreshold = 50;
+
+  canvas.addEventListener("touchstart", (evt) => {
+    if (evt.touches.length === 1) {
+      touchStartX = evt.touches[0].clientX;
+    }
+  });
+  canvas.addEventListener("touchend", (evt) => {
+    if (touchStartX === null) return;
+    const touchEndX = evt.changedTouches[0].clientX;
+    const deltaX = touchEndX - touchStartX;
+    touchStartX = null;
+
+    if (Math.abs(deltaX) < swipeThreshold) {
+      return;
+    }
+    const body = document.body;
+    let year = parseInt(body.dataset.year);
+    let month = parseInt(body.dataset.month);
+    let day = parseInt(body.dataset.day);
+
+    if (deltaX > 0) {
+      day = day - 1;
+    } else {
+      day = day + 1;
+    }
+
+    window.location.href = `/?year=${year}&month=${month}&day=${day}`;
+  });
+});
