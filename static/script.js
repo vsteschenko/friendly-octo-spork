@@ -148,7 +148,6 @@ const centerTextPlugin = {
     if (chart.data.datasets[0] && chart.data.datasets[0].realAmounts) {
       value = chart.data.datasets[0].realAmounts.reduce((sum, amount) => sum + amount, 0);
     }
-    
     const formattedValue = value.toFixed(2);
 
     ctx.font = "bold 14px Arial";
@@ -222,21 +221,22 @@ function loadExpenseChart() {
         expenseChartInstance.destroy();
       }
 
-      const labels = data.categories;
-      const backgroundColors = labels.map(
-        (category) => categoryColors[category] || "#cccccc"
-      );
+      const hasData = Array.isArray(data.amounts) && data.amounts.some((amount) => Number(amount) !== 0);
+      const labels = hasData ? data.categories : ["No data"];
+      const backgroundColors = hasData ? labels.map((category) => categoryColors[category] || "#cccccc"): ["#e0e0e0"];
+      const amounts = hasData ? data.amounts : [1];
+      const realAmounts = hasData ? data.real_amounts : [0];
 
       expenseChartInstance = new Chart(ctx, {
         type: "doughnut",
         data: {
-          labels: data.categories,
+          labels: labels,
           datasets: [
             {
-              data: data.amounts,
+              data: amounts,
               backgroundColor: backgroundColors,
               borderWidth: 1,
-              realAmounts: data.real_amounts,
+              realAmounts: realAmounts,
             },
           ],
         },
@@ -250,6 +250,7 @@ function loadExpenseChart() {
               display: false
             },
             tooltip: {
+              enabled: hasData,
               callbacks: {
                 label: function (context) {
                   const realAmount =
