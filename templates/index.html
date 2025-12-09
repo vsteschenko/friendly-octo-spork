@@ -14,7 +14,6 @@
   <body data-year="{{ current_year }}" data-month="{{ '%02d'|format(current_month) }}" data-day="{{ '%02d'|format(current_day) }}" data-sum="{{ sum }}">
     <nav>
       <form method="get" action="{{ url_for('index') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="year" value="{{ current_year }}" />
         <input type="hidden" name="month" value="{{ current_month }}" />
         <button
