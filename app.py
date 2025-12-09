@@ -351,11 +351,12 @@ def annual_report():
         income = 0
     cur.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ? GROUP BY category", (user_id, timestamp_pattern))
     sum_by_category = cur.fetchall()
-
-    # show more function
-    # cur.execute("SELECT timestamp, category, amount FROM transactions WHERE user_id=? AND type='expense' AND timestamp LIKE ? GROUP BY category", (user_id, timestamp_pattern))
-    # sum_by_category = cur.fetchall()
-
+    new_sum_by_category = []
+    for cat in sum_by_category:
+        x = category_name[cat[0]]
+        new_tx = (cat[0], cat[1], x)
+        new_sum_by_category.append(new_tx)
+    sum_by_category = new_sum_by_category
     return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income, sum_by_category=sum_by_category)
 
 @app.route('/report_chart', methods=['GET'])

@@ -161,6 +161,7 @@ window.onload = loadReportChart;
 document.addEventListener("DOMContentLoaded", function () {
   flatpickr("#monthPicker", {
     dateFormat: "Y-m",
+    disableMobile: true,
     plugins: [
       new monthSelectPlugin({
         shorthand: true,

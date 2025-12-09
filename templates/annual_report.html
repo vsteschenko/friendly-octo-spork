@@ -251,7 +251,7 @@
         <span class="summary-value">{{ expense | currency }}</span>
       </div>
     </div>
-        <div class="breakdownBorder">
+    <div class="breakdownBorder">
       <table id="categoryTransactions" class="table">
         <thead>
           <tr>
@@ -263,7 +263,7 @@
         <tbody>
           {% for category in sum_by_category%}
             <tr>
-              <td>{{ category[0] }}</td>
+              <td>{{ category[2] }}</td>
               <td>{{ category[1] | currency  }}</td>
               <td> <button data-category="{{ category[0] }}" class="show-more"> show more</button></td>
             </tr>
