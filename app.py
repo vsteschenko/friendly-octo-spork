@@ -116,6 +116,17 @@ def email_validator(email):
     except EmailNotValidError:
         return False
 
+def password_validator(password: str):
+    if not password:
+        return False, "Password required"
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    has_letter = any(ch.isalpha() for ch in password)
+    has_digit = any(ch.isdigit() for ch in password)
+    if not has_letter or not has_digit:
+        return False, "Password must contain at least one letter and one digit"
+    return True, None
+
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 
@@ -485,6 +496,10 @@ def signup():
             error = "Passwords don't match"
             return render_template("signup.html", error=error)
 
+        ok, error = password_validator(email)
+        if not ok:
+            return render_template("signup.html", error=error)
+
         if not email_validator(email):
             error = 'Invalid email'
             return render_template('signup.html', error=error)
@@ -619,8 +634,9 @@ def change_password():
         if new_password != confirm_password:
             return render_template('change_password.html', error="New passwords do not match")
 
-        if len(new_password) < 6:
-            return render_template('change_password.html', error="Password must be at least 6 characters")
+        ok, error = password_validator(new_password)
+        if not ok:
+            return render_template("change_password.html", error=error)
 
         new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
         cur.execute("UPDATE users SET password = ? WHERE email = ?", (new_hash, email))
@@ -697,8 +713,10 @@ def reset_password():
         confirm_password = request.form['confirm_password']
         if new_password != confirm_password:
             return render_template('reset_password.html', token=token, error="Passwords do not match")
-        if len(new_password) < 6:
-            return render_template('reset_password.html', token=token, error="Password must be at least 6 characters")
+
+        ok, error = password_validator(new_password)
+        if not ok:
+            return render_template("reset_password.ht,l", token=token, error=error)
 
         cur = get_db().cursor()
         cur.execute("SELECT email, reset_token_expires_at FROM users WHERE reset_token = ?", (token,))
