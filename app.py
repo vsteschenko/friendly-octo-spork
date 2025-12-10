@@ -537,7 +537,7 @@ def signup():
             error = "Passwords don't match"
             return render_template("signup.html", error=error)
 
-        ok, error = password_validator(email)
+        ok, error = password_validator(password)
         if not ok:
             return render_template("signup.html", error=error)
 
