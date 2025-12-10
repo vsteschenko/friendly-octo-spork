@@ -2,7 +2,7 @@ from flask import Flask, render_template, session, request, redirect, url_for, g
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 import os, sqlite3, bcrypt
-from datetime import datetime
+from datetime import datetime, timedelta
 from calendar import monthrange
 from email_validator import validate_email,EmailNotValidError
 import secrets
@@ -118,6 +118,20 @@ def email_validator(email):
 
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+
+def create_token_with_expiry(hours=1):
+    token = generate_token()
+    expires_at = (datetime.now() + timedelta(hours=hours)).isoformat()
+    return token, expires_at
+
+def is_token_expired(expires_at: str) -> bool:
+    if not expires_at:
+        return True
+    try:
+        expires_at = datetime.fromisoformat(expires_at)
+    except ValueError:
+        return True
+    return datetime.now() > expires_at
 
 def send_verification_email(email, token):
     base_url = app.config["BASE_URL"]
@@ -479,7 +493,7 @@ def signup():
         salt = bcrypt.gensalt()
         hash = bcrypt.hashpw(bytes, salt)
 
-        verification_token = generate_token()
+        verification_token, verification_expires_at = create_token_with_expiry(hours=24)
 
         is_verified = 0
 
@@ -488,7 +502,7 @@ def signup():
         check = cur.fetchone()
         
         if check is None:
-            cur.execute("INSERT INTO users(email, password, is_verified, verification_token) VALUES(?,?,?,?)",(email,hash,is_verified,verification_token))
+            cur.execute("INSERT INTO users(email, password, is_verified, verification_token, verification_token_expires_at) VALUES(?,?,?,?,?)",(email,hash,is_verified,verification_token, verification_expires_at))
             get_db().commit()
             cur.close()
 
@@ -559,15 +573,20 @@ def verify():
         return {"error:":"Invalid verification link."}, 400
 
     cur = get_db().cursor()
-    cur.execute("SELECT id, is_verified FROM users WHERE verification_token = ?", (token,))
+    cur.execute("SELECT id, is_verified, verification_token_expires_at FROM users WHERE verification_token = ?", (token,))
     user = cur.fetchone()
 
     if user:
-        user_id, is_verified = user
+        user_id, is_verified, expires_at = user
+
+        if is_token_expired(expires_at):
+            cur.close()
+            return {"error": "Verification link has expired."}, 400
+        
         if is_verified:
             message = "Email already verified."
         else:
-            cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?", (user_id,))
+            cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?", (user_id,))
             get_db().commit()
             message = "Email verified successfully!"
         cur.close()
@@ -629,8 +648,8 @@ def forgot_password():
             cur.close()
             return render_template('forgot_password.html', error="No user with this email")
 
-        reset_token = generate_token()
-        cur.execute("UPDATE users SET reset_token = ? WHERE email = ?", (reset_token, email))
+        reset_token, reset_expires_at = create_token_with_expiry(hours=1)
+        cur.execute("UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?", (reset_token, reset_expires_at,email))
         get_db().commit()
         cur.close()
         send_reset_password_email(email, reset_token)
@@ -682,14 +701,20 @@ def reset_password():
             return render_template('reset_password.html', token=token, error="Password must be at least 6 characters")
 
         cur = get_db().cursor()
-        cur.execute("SELECT email FROM users WHERE reset_token = ?", (token,))
+        cur.execute("SELECT email, reset_token_expires_at FROM users WHERE reset_token = ?", (token,))
         user = cur.fetchone()
         if not user:
             cur.close()
             return "Invalid or expired token", 400
+        
+        email, expires_at = user
+
+        if is_token_expired(expires_at):
+            cur.close()
+            return "Invalid or expired token", 400
 
         new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-        cur.execute("UPDATE users SET password = ?, reset_token = NULL WHERE reset_token = ?", (new_hash, token))
+        cur.execute("UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE reset_token = ?", (new_hash, token))
         get_db().commit()
         cur.close()
         return render_template('reset_password.html', success="Password changed successfully")
@@ -792,10 +817,10 @@ def delete_account():
         if not email_validator(email):
             return render_template('delete_account.html', error="Invalid email format")
         
-        delete_token = generate_token()
+        delete_token, delete_expires_at = create_token_with_expiry(hours=1)
         
         cur = get_db().cursor()
-        cur.execute("UPDATE users SET delete_token = ? WHERE email = ?", (delete_token, email))
+        cur.execute("UPDATE users SET delete_token = ?, delete_token_expires_at = ? WHERE email = ?", (delete_token, delete_expires_at, email))
         get_db().commit()
         cur.close()
         
@@ -811,15 +836,19 @@ def handle_delete_confirmation(token):
         return "Invalid token", 400
     
     cur = get_db().cursor()
-    cur.execute("SELECT id, email FROM users WHERE delete_token = ?", (token,))
+    cur.execute("SELECT id, email, delete_token_expires_at FROM users WHERE delete_token = ?", (token,))
     user = cur.fetchone()
     
     if not user:
         cur.close()
         return "Invalid or expired token", 400
+
+    user_id, email, expires_at = user
     
-    user_id, email = user
-    
+    if is_token_expired(expires_at):
+        cur.close()
+        return "Invalid or expired token", 400 
+
     try:
         cur.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
         cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
