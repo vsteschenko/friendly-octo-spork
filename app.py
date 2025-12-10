@@ -90,6 +90,24 @@ category_name = {
 @app.after_request
 def add_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = ("geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)")
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self' https://cdn.jsdelivr.net data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    response.headers["Content-Security-Policy"] = csp
     return response
 
 @app.template_filter('datetimeformat')
@@ -108,6 +126,29 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(app.config["DATABASE"])
     return db
+
+def get_client_ip():
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+
+def record_login_attempt(email: str, ip: str, success: bool):
+    db = get_db()
+    cur = db.cursor()
+    if not email_validator(email):
+        return "Incorrect email"
+    cur.execute("INSERT INTO login_attempts(email, ip, timestamp, success) VALUES (?,?,?,?)", (email, ip, datetime.now().isoformat(), 1 if success else 0))
+    db.commit()
+    db.close()
+
+def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5) -> bool:
+    cutoff = (datetime.now() - timedelta(seconds=window_seconds)).isoformat()
+    db = get_db()
+    cur = db.cursor()
+    if not email_validator(email):
+        return "Incorrect email"
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND (email = ? OR ip = ?)", (cutoff, email, ip))
+    count = cur.fetchone()[0]
+    cur.close()
+    return count >= max_attempts
 
 def email_validator(email):
     try:
@@ -533,17 +574,23 @@ def signup():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        ip = get_client_ip()
         email = request.form['email']
         password = request.form['password']
 
+        if is_rate_limited(email, ip, window_seconds=300, max_attempts=5):
+            app.logger.warning(f"Rate limit: too many login attempts for {email} from {ip}")
+            return render_template('login.html', error='Too many login attempts. Please try again later.')
+
         if not email or not password:
             app.logger.warning(f'Failed login attempt - Missing email or password. Email: {email}')
-            return render_template('login.html')
+            record_login_attempt(email, ip, success=False)
+            return render_template('login.html', error="Invalid email or password")
         
         if not email_validator(email):
-            error = 'Invalid email'
             app.logger.warning(f'Failed login attempt - Invalid email format. Email: {email}')
-            return render_template('signup.html', error=error)
+            record_login_attempt(email, ip, success=False)
+            return render_template('login.html', error="Invalid email or password")
         
         cur = get_db().cursor()
         cur.execute("SELECT password, is_verified FROM users WHERE email = ?", (email,))
@@ -552,21 +599,26 @@ def login():
 
         if not user:
             app.logger.warning(f'Failed login attempt - User not found or wrong password. Email: {email}')
+            record_login_attempt(email, ip, success=False)
             return render_template('login.html', error="Invalid email or password")
 
         hashed_pw, is_verified = user
 
         if not bcrypt.checkpw(password.encode('utf-8'), hashed_pw):
             app.logger.warning(f'Failed login attempt - Wrong password. Email: {email}')
+            record_login_attempt(email, ip, success=False)
             return render_template('login.html', error="Invalid email or password")
 
         if is_verified == 0:
             app.logger.warning(f'Failed login attempt - Email not verified. Email: {email}')
+            record_login_attempt(email, ip, success=False)
             return render_template('login.html', error="Please verify your email")
         
         session.clear()
         session['email'] = email
         session.permanent = True
+
+        record_login_attempt(email, ip, success=True)
 
         app.logger.info(f'{email} successfully logged in')
         return redirect(url_for('index'))
@@ -653,8 +705,15 @@ def forgot_password():
         return redirect(url_for("index"))
 
     if request.method == 'POST':
+        ip = get_client_ip()
         email = request.form['email'].lower()
+
+        if is_rate_limited(email, ip, window_seconds=900, max_attempts=5):
+            app.logger.warning(f"Rate limit: too many password reset attempts for {email} from {ip}")
+            return render_template("forgot_password.html", error="Too many attempts to reset your password, please try later")
+
         if not email or not email_validator(email):
+            record_login_attempt(email, ip, success=False)
             return render_template('forgot_password.html', error="Enter a valid email")
 
         cur = get_db().cursor()
@@ -662,6 +721,7 @@ def forgot_password():
         user = cur.fetchone()
         if not user:
             cur.close()
+            record_login_attempt(email, ip, False)
             return render_template('forgot_password.html', error="No user with this email")
 
         reset_token, reset_expires_at = create_token_with_expiry(hours=1)
@@ -669,6 +729,7 @@ def forgot_password():
         get_db().commit()
         cur.close()
         send_reset_password_email(email, reset_token)
+        record_login_attempt(email, ip, True)
         return render_template('forgot_password.html', success="Password reset link sent to your email")
     return render_template('forgot_password.html')
 
@@ -716,7 +777,7 @@ def reset_password():
 
         ok, error = password_validator(new_password)
         if not ok:
-            return render_template("reset_password.ht,l", token=token, error=error)
+            return render_template("reset_password.html", token=token, error=error)
 
         cur = get_db().cursor()
         cur.execute("SELECT email, reset_token_expires_at FROM users WHERE reset_token = ?", (token,))
