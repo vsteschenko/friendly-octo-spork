@@ -41,6 +41,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 env = os.getenv("FLASK_ENV", "production").lower()
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS"))
 
 if env == "development":
     app.config.from_object(DevelopmentConfig)
@@ -160,8 +161,8 @@ def email_validator(email):
 def password_validator(password: str):
     if not password:
         return False, "Password required"
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
+    if len(password) < 10:
+        return False, "Password must be at least 10 characters long"
     has_letter = any(ch.isalpha() for ch in password)
     has_digit = any(ch.isdigit() for ch in password)
     if not has_letter or not has_digit:
@@ -546,7 +547,7 @@ def signup():
             return render_template('signup.html', error=error)
         
         bytes = password.encode('utf-8')
-        salt = bcrypt.gensalt()
+        salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
         hash = bcrypt.hashpw(bytes, salt)
 
         verification_token, verification_expires_at = create_token_with_expiry(hours=24)
@@ -710,11 +711,11 @@ def forgot_password():
 
         if is_rate_limited(email, ip, window_seconds=900, max_attempts=5):
             app.logger.warning(f"Rate limit: too many password reset attempts for {email} from {ip}")
-            return render_template("forgot_password.html", error="Too many attempts to reset your password, please try later")
+            return render_template("forgot_password.html", msg="Too many attempts to reset your password, please try later")
 
         if not email or not email_validator(email):
             record_login_attempt(email, ip, success=False)
-            return render_template('forgot_password.html', error="Enter a valid email")
+            return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
 
         cur = get_db().cursor()
         cur.execute("SELECT id FROM users WHERE email = ?", (email,))
@@ -722,7 +723,7 @@ def forgot_password():
         if not user:
             cur.close()
             record_login_attempt(email, ip, False)
-            return render_template('forgot_password.html', error="No user with this email")
+            return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
 
         reset_token, reset_expires_at = create_token_with_expiry(hours=1)
         cur.execute("UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?", (reset_token, reset_expires_at,email))
@@ -730,7 +731,7 @@ def forgot_password():
         cur.close()
         send_reset_password_email(email, reset_token)
         record_login_attempt(email, ip, True)
-        return render_template('forgot_password.html', success="Password reset link sent to your email")
+        return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
     return render_template('forgot_password.html')
 
 def send_reset_password_email(email, token):

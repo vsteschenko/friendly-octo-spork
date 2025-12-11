@@ -280,12 +280,24 @@ function showTransactions(category, year, month) {
       }
       items.forEach((tx, idx) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${tx.amount}</td>
-          <td>${expenseCategories[tx.category]}</td>
-          <td>${tx.place || "-"}</td>
-          <td>${formatTxTime(tx.timestamp)}</td>
-        `;
+
+        const amountTd = document.createElement("td")
+        amountTd.textContent = tx.amount
+
+        const categoryTd = document.createElement("td")
+        categoryTd.textContent = expenseCategories[tx.category]
+        
+        const placeTd = document.createElement("td")
+        placeTd.textContent = tx.place || "-"
+
+        const timeTd = document.createElement("td")
+        timeTd.textContent = formatTxTime(tx.timestamp)
+        
+        row.appendChild(amountTd)
+        row.appendChild(categoryTd)
+        row.appendChild(placeTd)
+        row.appendChild(timeTd)
+
         row.addEventListener("click", () => {
           const txDate = new Date(tx.timestamp);
           if (Number.isNaN(txDate.getTime())) return;
@@ -314,12 +326,24 @@ function showTransactionsYear(category, year) {
       }
       items.forEach((tx, idx) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${tx.amount}</td>
-          <td>${expenseCategories[tx.category]}</td>
-          <td>${tx.place || "-"}</td>
-          <td>${formatTxTime(tx.timestamp)}</td>
-        `;
+
+        const amountTd = document.createElement("td")
+        amountTd.textContent = tx.amount
+
+        const categoryTd = document.createElement("td")
+        categoryTd.textContent = expenseCategories[tx.category]
+        
+        const placeTd = document.createElement("td")
+        placeTd.textContent = tx.place || "-"
+
+        const timeTd = document.createElement("td")
+        timeTd.textContent = formatTxTime(tx.timestamp)
+        
+        row.appendChild(amountTd)
+        row.appendChild(categoryTd)
+        row.appendChild(placeTd)
+        row.appendChild(timeTd)
+        
         row.addEventListener("click", () => {
           const txDate = new Date(tx.timestamp);
           if (Number.isNaN(txDate.getTime())) return;
