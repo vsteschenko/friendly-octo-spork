@@ -99,7 +99,11 @@ def add_security_headers(response):
     response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
     csp = (
         "default-src 'self'; "
-        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "script-src 'self' "
+        "https://cdn.jsdelivr.net "
+        "https://cdn.jsdelivr.net/npm/chart.js "
+        "https://cdnjs.cloudflare.com "
+        "; "
         "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
         "img-src 'self' data:; "
         "font-src 'self' https://cdn.jsdelivr.net data:; "
