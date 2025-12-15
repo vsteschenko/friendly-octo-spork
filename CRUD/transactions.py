@@ -4,7 +4,7 @@ from utils.utils import get_user_id
 from datetime import datetime
 from calendar import monthrange
 from db import get_db
-from utils.categories import category_name
+from utils.categories import category_name, income_category_name
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -198,7 +198,15 @@ def annual_report():
         new_tx = (cat[0], cat[1], x)
         new_sum_by_category.append(new_tx)
     sum_by_category = new_sum_by_category
-    return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income, sum_by_category=sum_by_category)
+    cur.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id=? AND type='income' AND timestamp LIKE ? GROUP BY category", (user_id, timestamp_pattern))
+    income_by_category = cur.fetchall()
+    new_income_by_category = []
+    for cat in income_by_category:
+        x = income_category_name[cat[0]]
+        new_tx = (cat[0], cat[1], x)
+        new_income_by_category.append(new_tx)
+    income_by_category = new_income_by_category
+    return render_template('annual_report.html', current_year=year, current_month=month, username=username, expense=expense, income=income, sum_by_category=sum_by_category, income_by_category=income_by_category)
 
 @app.route('/report_chart', methods=['GET'])
 def report_chart():
@@ -341,6 +349,10 @@ def transactions_by_categories_year():
         return redirect(url_for("index"))
     email = session['email']
     user_id = get_user_id(email)
+    type = request.args.get("type", "expense")
+    if type not in ("expense", "income"):
+        return jsonify({"error": "invalid type"}), 400
+    
     category = request.args.get("category")
     year = int(request.args.get("year", datetime.now().year))
     if not category:
@@ -355,12 +367,12 @@ def transactions_by_categories_year():
         SELECT amount, timestamp, category, place
         FROM transactions
         WHERE user_id=?
-          AND type='expense'
+          AND type=?
           AND category=?
           AND timestamp BETWEEN ? AND ?
         ORDER BY timestamp ASC
         """,
-        (user_id, category, start_of_year, end_of_year),
+        (user_id, type, category, start_of_year, end_of_year),
     )
     rows = cur.fetchall()
     cur.close()

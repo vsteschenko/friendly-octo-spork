@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 def email_validator(email):
     try:
-        validate_email(email)
+        validate_email(email, check_deliverability=False)
         return True
     except EmailNotValidError:
         return False

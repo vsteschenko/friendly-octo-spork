@@ -21,3 +21,16 @@ category_name = {
     "work": "Work",
     "other": "Other"
 }
+
+income_category_name = {
+    "business": "Business Income",
+    "dividends": "Dividends",
+    "freelance": "Freelance",
+    "gifts": "Gifts",
+    "government_benefits": "Government Benefits",
+    "investments": "Investments",
+    "refunds": "Refunds",
+    "rental_income": "Rental Income",
+    "salary": "Salary",
+    "other": "Other"
+}

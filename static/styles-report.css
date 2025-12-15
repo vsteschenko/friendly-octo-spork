@@ -201,6 +201,9 @@
 .summary-label {
     font-size: 14px;
     color: rgb(100, 100, 100);
+    button {
+      margin-left: 10px;
+    }
 }
 
 .summary-value {

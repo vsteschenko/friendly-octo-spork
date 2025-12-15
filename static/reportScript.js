@@ -312,8 +312,8 @@ function showTransactions(category, year, month) {
     .catch(err => console.error("Failed to load transactions:", err));
 }
 
-function showTransactionsYear(category, year) {
-  fetch(`/transactions_by_categories_year?category=${category}&year=${year}`)
+function showTransactionsYear(type, category, year) { 
+  fetch(`/transactions_by_categories_year?type=${type}&category=${category}&year=${year}`)
     .then(res => res.json())
     .then(items => {
       const table = document.querySelector("#categoryTransactionsYear tbody");
@@ -359,13 +359,37 @@ function showTransactionsYear(category, year) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const year = getQueryParam("year") || new Date().getFullYear();
+  const expenseWrap = document.getElementById("table-expense");
+  const incomeWrap = document.getElementById("table-income");
+
+  document.getElementById("showTxsExpense")?.addEventListener("click", () => {
+    expenseWrap.style.display = "";
+    incomeWrap.style.display = "none";
+  });
+
+  document.getElementById("showTxsIncome")?.addEventListener("click", () => {
+    expenseWrap.style.display = "none";
+    incomeWrap.style.display = "";
+  });
+
   document.querySelectorAll(".show-more").forEach(btn => {
     btn.addEventListener("click", () => {
-      showTransactionsYear(btn.dataset.category, year);
+      const type = btn.dataset.type;
+      const category = btn.dataset.category;
+      const year = getQueryParam("year") || new Date().getFullYear();
+      showTransactionsYear(type, category, year);
     });
   });
 });
+
+// document.addEventListener("DOMContentLoaded", () => {
+//   const year = getQueryParam("year") || new Date().getFullYear();
+//   document.querySelectorAll(".show-more").forEach(btn => {
+//     btn.addEventListener("click", () => {
+//       showTransactionsYear(btn.dataset.category, year);
+//     });
+//   });
+// });
 
 function moveToDate(year, month, day) {
   window.location.href = `/?year=${year}&month=${month}&day=${day}`;

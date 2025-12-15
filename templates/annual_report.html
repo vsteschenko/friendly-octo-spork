@@ -243,11 +243,11 @@
         <span class="summary-value">{{ (income + expense) | currency }}</span>
       </div>
       <div class="summary-card">
-        <span class="summary-label">Income</span>
+        <span class="summary-label">Income <button id="showTxsIncome" data-type="income">show more</button></span>
         <span class="summary-value">{{ income | currency }}</span>
       </div>
       <div class="summary-card">
-        <span class="summary-label">Expenses</span>
+        <span class="summary-label">Expenses <button id="showTxsExpense" data-type="expense">show more</button></span>
         <span class="summary-value">{{ expense | currency }}</span>
       </div>
     </div>
@@ -260,12 +260,21 @@
             <th></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="table-expense">
           {% for category in sum_by_category%}
-            <tr>
+            <tr class="incomeTxs">
               <td>{{ category[2] }}</td>
               <td>{{ category[1] | currency  }}</td>
-              <td> <button data-category="{{ category[0] }}" class="show-more"> show more</button></td>
+              <td> <button data-category="{{ category[0] }}" class="show-more" data-type="expense"> show more</button></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tbody id="table-income" style="display: none;">
+          {% for category in income_by_category%}
+            <tr class="incomeTxs">
+              <td>{{ category[2] }}</td>
+              <td>{{ category[1] | currency  }}</td>
+              <td> <button data-category="{{ category[0] }}" class="show-more" data-type="income"> show more</button></td>
             </tr>
           {% endfor %}
         </tbody>
