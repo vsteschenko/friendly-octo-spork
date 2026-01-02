@@ -178,6 +178,26 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  flatpickr("#yearPicker", {
+    dateFormat: "Y-m",
+    disableMobile: true,
+    plugins: [
+      new monthSelectPlugin({
+        shorthand: true,
+        dateFormat: "Y-m",
+        altFormat: "F Y",
+      }),
+    ],
+    onChange: function (selectedDates, dateStr, instance) {
+      const selectedDate = selectedDates[0];
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1;
+      window.location.href = `/annual_report?year=${year}`;
+    },
+  });
+});
+
 function menu() {
   const menuEl = document.getElementsByClassName("menu")[0];
   const currentDisplay = window.getComputedStyle(menuEl).display;
