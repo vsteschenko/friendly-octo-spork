@@ -141,6 +141,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   commentButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      if (!commentModal.classList.contains("hidden")) {
+        commentModal.classList.add("hidden");
+        return;
+      }
       const txComment = button.getAttribute("data-tx-comment") || "";
       commentText.textContent = txComment ? txComment : "No comment";
       commentModal.classList.remove("hidden");
