@@ -46,6 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const modal = document.getElementById('txModal')
+  const commentModal = document.getElementById("commentModal");
+  const commentModalContent = document.getElementById("commentModalContent");
+  const commentText = document.getElementById("commentText");
 
   document.querySelector(".close-btn").onclick = () => {
     document.getElementById("txModal").classList.add("hidden");
@@ -59,6 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.classList.add("hidden");
       const txForm = document.getElementById("txForm");
       txForm.reset();
+    } else if (event.target === commentModal) {
+      commentModal.classList.add("hidden");
     }
   };
 
@@ -85,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const editButtons = document.querySelectorAll(".edit-btn");
+  const commentButtons = document.querySelectorAll(".comment-btn");
 
   editButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -95,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
       txAmount = Math.abs(txAmount);
       const txCategory = button.getAttribute("data-tx-category");
       const txTime = button.getAttribute("data-tx-time");
+      const txComment = button.getAttribute("data-tx-comment")
 
       const txForm = document.getElementById("txForm");
       txForm.action = "/update_tx";
@@ -104,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
       txForm.querySelector("input[name='amount']").value = txAmount;
       txForm.querySelector("input[name='place']").value = txPlace;
       txForm.querySelector("input[name='tx_time']").value = txTime;
+      txForm.querySelector("input[name='comment']").value = txComment
 
       if (txType === "expense") {
         document.getElementById("expense-options").style.display =
@@ -130,6 +138,47 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.classList.remove("hidden");
     });
   });
+
+  commentButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const txComment = button.getAttribute("data-tx-comment") || "";
+      commentText.textContent = txComment ? txComment : "No comment";
+      commentModal.classList.remove("hidden");
+
+      requestAnimationFrame(() => {
+        const row = button.closest("tr");
+        if (!row) {
+          return;
+        }
+        const rowRect = row.getBoundingClientRect();
+        const modalRect = commentModalContent.getBoundingClientRect();
+        const offsetX = 20;
+        const padding = 8;
+        let top = rowRect.bottom;
+        let left = rowRect.left + rowRect.width / 2 + offsetX;
+
+        if (left + modalRect.width > window.innerWidth - padding) {
+          left = window.innerWidth - modalRect.width - padding;
+        }
+        if (left < padding) {
+          left = padding;
+        }
+        if (top + modalRect.height > window.innerHeight - padding) {
+          top = window.innerHeight - modalRect.height - padding;
+        }
+        if (top < padding) {
+          top = padding;
+        }
+
+        commentModalContent.style.top = `${top}px`;
+        commentModalContent.style.left = `${left}px`;
+      });
+    });
+  });
+
+  // document.querySelector(".comment-close-btn").onclick = () => {
+  //   commentModal.classList.add("hidden");
+  // };
 
   document.querySelector(".close-btn").onclick = () => {
     modal.classList.add("hidden");
