@@ -191,19 +191,17 @@ tr:hover {
     position: relative;
     min-width: 250px;
   }
-  /* #commentModal {
-    align-items: flex-start;
-    justify-content: flex-start;
-  } */
-   #commentModal {
+  #commentModal {
     backdrop-filter: none;
-    /* background: transparent; */
     background: rgba(0, 0, 0, 0.01);
+    pointer-events: none;
   }
+
   #commentModal .comment-modal-content {
     position: absolute;
     min-width: 220px;
     max-width: 320px;
+    pointer-events: auto;
   }
   .modal-content .close-btn {
     position: absolute;
