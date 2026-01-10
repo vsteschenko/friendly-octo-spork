@@ -262,12 +262,41 @@
         <th>Time</th>
         <th></th>
         <th></th>
+        <th></th>
         {% for tx in txs %}
         <tr>
           <td>{{ tx[0] | currency }}</td>
           <td>{{ tx[4] | replace('_',' ') | capitalize}}</td>
           <td>{{ tx[5] }}</td>
           <td>{{ tx[3] | datetimeformat('%H:%M') }}</td>
+          <td class="comment">
+            <button
+              type="button"
+              class="comment-btn"
+              data-tx-comment="{{ tx[6] }}"
+              aria-label="Show comment"
+              style="
+                all: unset;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 20px;
+                height: 20px;"
+            >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" viewBox="0 0 24 24" 
+              stroke-width="1.5" 
+              stroke="currentColor" 
+              class="size-6">
+              <path 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.068.157 2.148.279 3.238.364.466.037.893.281 1.153.671L12 21l2.652-3.978c.26-.39.687-.634 1.153-.67 1.09-.086 2.17-.208 3.238-.365 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+            </svg>
+            </button>
+          </td>
           <td class="edit">
             <form method="POST" action="{{ url_for('update_tx') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -289,6 +318,7 @@
                 data-tx-amount="{{ tx[0] }}"
                 data-tx-category="{{ tx[4] }}"
                 data-tx-time="{{ tx[3] | datetimeformat('%H:%M') }}"
+                data-tx-comment="{{ tx[6] }}"
                 type="button"
                 style="
                   all: unset;
@@ -460,7 +490,12 @@
 
           <label for="tx_time"></label>
           <input type="time" id="tx_time" name="tx_time" required />
-
+          <input
+            type="text"
+            name="comment"
+            placeholder="Your comment"
+            maxlength="250"
+          />
           <input
             type="submit"
             value="Submit"
@@ -474,6 +509,11 @@
             style="display: none"
           />
         </form>
+      </div>
+    </div>
+    <div id="commentModal" class="modal hidden">
+      <div class="modal-content comment-modal-content" id="commentModalContent">
+        <p id="commentText"></p>
       </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>

@@ -49,7 +49,7 @@ def index():
 
         cur = get_db().cursor()
         cur.execute("""
-            SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp, transactions.category, transactions.place
+            SELECT transactions.amount, transactions.type, transactions.id, transactions.timestamp, transactions.category, transactions.place, transactions.comment
             FROM transactions JOIN users ON transactions.user_id=users.id 
             WHERE users.id = ? AND transactions.timestamp BETWEEN ? AND ?
             """, (user_id, start_of_day, end_of_day))
@@ -77,11 +77,13 @@ def index():
             type = request.form['type']
             place = request.form['place']
             time = request.form['tx_time']
+            comment = request.form['comment']
             hour, minute = map(int, time.split(':'))
             transaction_date = datetime(current_year, current_month, current_day, hour, minute)
             if len(place) > 100:
                 return {'error': 'Name of the place is too long'}, 404
-
+            if len(comment) > 250:
+                return {'error': 'Comment is too long'}, 404
             if type == 'expense':
                 category = request.form.get('expense-category')
             elif type == 'income':
@@ -93,7 +95,7 @@ def index():
 
             if not type or not amount or not user_id or not category or not transaction_date:
                 return {'error': 'Select category'}, 401
-            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place) VALUES(?,?,?,?,?,?)",(type, amount, user_id, transaction_date, category, place))
+            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place,comment) VALUES(?,?,?,?,?,?,?)",(type, amount, user_id, transaction_date, category, place, comment))
             get_db().commit()
             cur.close()
 
@@ -264,6 +266,7 @@ def update_tx():
         type = request.form['type']
         place = request.form['place']
         amount = request.form['amount']
+        comment = request.form['comment']
         current_year = int(request.form.get('year'))
         current_month = int(request.form.get('month'))
         current_day = int(request.form.get('day'))
@@ -282,6 +285,8 @@ def update_tx():
             return {'error': 'All fields are required'}, 400
         if len(place) > 100:
             return {'error': 'Place name is too long'}, 400
+        if len(comment) > 250:
+            return {'error': 'Comment is too long'}, 400
         try:
             amount = float(amount)
         except ValueError:
@@ -295,9 +300,9 @@ def update_tx():
 
         cur.execute("""
             UPDATE transactions
-            SET type = ?, place = ?, amount = ?, category = ?, timestamp = ?
+            SET type = ?, place = ?, amount = ?, category = ?, timestamp = ?, comment = ?
             WHERE id = ? AND user_id = ?
-        """, (type, place, amount, category, transaction_date, tx_id, user_id))
+        """, (type, place, amount, category, transaction_date, comment, tx_id, user_id))
         get_db().commit()
         cur.close()
 
