@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 *.pyo
+*.sqlite3
+*.db
 instance/
 finance_app.db
 .env
@@ -8,3 +10,4 @@ test.env
 venv
 friendly-octo-spork.db
 app.log
+data
