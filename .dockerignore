@@ -8,5 +8,4 @@ __pycache__/
 *.db
 *.sqlite*
 tests/
-CRUD/
 logs/
