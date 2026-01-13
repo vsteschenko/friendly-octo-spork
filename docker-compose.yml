@@ -6,8 +6,6 @@ services:
     volumes:
       - /home/ledgeradmin/ledger/data:/data
     ports:
-      - "5001:5000"
+      - "127.0.0.1:8001:5000"
     restart: unless-stopped
 
-volumes:
-  ledger-db:
