@@ -1,0 +1,14 @@
+
+services:
+  ledger:
+    build: .
+    env_file: .env
+    volumes:
+      - ledger-db:/data
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+
+volumes:
+  ledger-db:
+

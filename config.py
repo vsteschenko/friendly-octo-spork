@@ -15,7 +15,7 @@ class DevelopmentConfig(BaseConfig):
     TEMPLATES_AUTO_RELOAD = True
     SESSION_COOKIE_SECURE = False
     PREFERRED_URL_SCHEME = "http"
-    BASE_URL = "http://127.0.0.1:5000"
+    BASE_URL = "http://127.0.0.1:5001"
 
 class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
