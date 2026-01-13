@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Set up SSH key and known hosts
         run: |
           mkdir -p ~/.ssh
@@ -26,20 +23,16 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa ledgeradmin@134.122.56.15 << 'EOF'
             set -euo pipefail
-            sudo bash -c '
-              set -euo pipefail
-              cd /root/friendly-octo-spork || exit 1
 
-              git fetch --all
-              git reset --hard origin/main
-              git clean -fd
+            APP_DIR="/home/ledgeradmin/ledger/app/friendly-octo-spork"
+            cd "$APP_DIR"
 
-              [ -d venv ] || python3 -m venv venv
-              source venv/bin/activate
-              python -m pip install --upgrade pip wheel setuptools
-              pip install -r requirements.txt
+            git fetch --all
+            git reset --hard origin/main
+            git clean -fd
 
-              systemctl restart ledger.service
-              systemctl status ledger.service --no-pager || true
-            '
+            docker compose up -d --build
+            docker image prune -f
+
+            docker compose ps
           EOF
