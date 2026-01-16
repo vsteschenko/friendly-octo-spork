@@ -31,8 +31,8 @@ jobs:
             git reset --hard origin/main
             git clean -fd
 
-            docker compose up -d --build
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
             docker image prune -f
 
-            docker compose ps
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
           EOF
