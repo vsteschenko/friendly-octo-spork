@@ -1,0 +1,7 @@
+
+services:
+  ledger:
+    env_file:
+      - /home/ledgeradmin/ledger/env/ledger.env
+    volumes:
+      - /home/ledgeradmin/ledger/data:/data

@@ -11,3 +11,4 @@ venv
 friendly-octo-spork.db
 app.log
 data
+ledger.env
