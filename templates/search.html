@@ -14,7 +14,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
         </svg>
       </a>
-      <p class="nav-title">Search</p>
+      <!-- <p class="nav-title">Search</p -->
     </nav>
 
     <div class="searchContainer">
@@ -28,7 +28,7 @@
           autocomplete="off"
           autofocus
         />
-        <button type="submit">Search</button>
+        <button class="searchSubmit" type="submit">Search</button>
       </form>
 
       {% if error %}
@@ -50,19 +50,26 @@
               <th>Comment</th>
             </tr>
             {% for tx in txs %}
-              <tr>
-                <td>{{ tx[0] | currency }}</td>
-                <td>{{ tx[4] | replace('_',' ') | capitalize }}</td>
-                <td>{{ tx[5] }}</td>
-                <td>{{ tx[3] }}</td>
-                <td>{{ tx[6] or "" }}</td>
-              </tr>
+                <tr
+                    class="search-result-row"
+                    data-timestamp="{{ tx[3] }}"
+                    tabindex="0"
+                    role="link"
+                >
+                    <td>{{ tx[0] | currency }}</td>
+                    <td>{{ tx[4] | replace('_',' ') | capitalize }}</td>
+                    <td>{{ tx[5] }}</td>
+                    <td>{{ tx[3] }}</td>
+                    <td>{{ tx[6] or "" }}</td>
+                </tr>
             {% endfor %}
+            
           </table>
         </div>
       {% elif query and not error %}
         <p class="emptyState">No transactions found.</p>
       {% endif %}
     </div>
+    <script src="{{ url_for('static', filename='searchScript.js') }}" ></script>
   </body>
 </html>

@@ -448,3 +448,16 @@ tr:hover {
   height: calc(100vh - 140px);
   margin-bottom: 10px;
 }
+
+.searchSubmit{
+  display: none;
+}
+
+.search-result-row {
+  cursor: pointer;
+}
+
+.search-result-row:focus {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
