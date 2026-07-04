@@ -428,7 +428,7 @@ def search_transactions():
         transactions = cur.fetchall()
         cur.close()
 
-        app.logger.info(f'{email} -- searched transactions by place')
+        app.logger.info(f'{email} -- searched transactions')
 
     return render_template(
         'search.html',
