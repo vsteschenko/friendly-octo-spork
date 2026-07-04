@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  </head>
+  <body>
+    <nav>
+      <a href="{{ url_for('index') }}" class="nav-icon-button" aria-label="Back to ledger">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="24" height="24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+      </a>
+      <p class="nav-title">Search</p>
+    </nav>
+
+    <div class="searchContainer">
+      <form method="GET" action="{{ url_for('search_transactions') }}" class="search-form">
+        <input
+          type="text"
+          name="q"
+          value="{{ query }}"
+          placeholder="Search by place"
+          maxlength="80"
+          autocomplete="off"
+          autofocus
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      {% if error %}
+        <p class="searchError">{{ error }}</p>
+      {% endif %}
+
+      {% if query and not error %}
+        <p class="searchMeta">{{ txs|length }} result{% if txs|length != 1 %}s{% endif %} for "{{ query }}"</p>
+      {% endif %}
+
+      {% if txs %}
+        <div class="table searchResults">
+          <table>
+            <tr>
+              <th>Amount</th>
+              <th>Category</th>
+              <th>Place</th>
+              <th>Date</th>
+              <th>Comment</th>
+            </tr>
+            {% for tx in txs %}
+              <tr>
+                <td>{{ tx[0] | currency }}</td>
+                <td>{{ tx[4] | replace('_',' ') | capitalize }}</td>
+                <td>{{ tx[5] }}</td>
+                <td>{{ tx[3] }}</td>
+                <td>{{ tx[6] or "" }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+        </div>
+      {% elif query and not error %}
+        <p class="emptyState">No transactions found.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>

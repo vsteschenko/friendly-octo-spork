@@ -392,3 +392,48 @@ def transactions_by_categories_year():
         for amount, timestamp, category, place in rows
     ]
     return jsonify(transactions)
+
+@app.route('/search', methods=['GET'])
+def search_transactions():
+    if 'email' not in session:
+        return redirect(url_for('login'))
+
+    email = session["email"]
+    username = email.split("@")[0]
+    user_id = get_user_id(email)
+
+    if user_id is None:
+        return redirect(url_for('login'))
+
+    query = request.args.get('q', '', type=str).strip()
+    transactions = []
+    error = None
+
+    if len(query) > 80:
+        error = "Search is too long"
+    elif query and len(query) < 2:
+        error = "Please enter at least 2 characters"
+    elif query:
+        cur = get_db().cursor()
+        cur.execute("""
+            SELECT amount, type, id, timestamp, category, place, comment
+            FROM transactions
+            WHERE user_id = ?
+              AND place IS NOT NULL
+              AND place != ''
+              AND place LIKE ? COLLATE NOCASE
+            ORDER BY timestamp DESC, id DESC
+            LIMIT 100
+        """, (user_id, f"{query}%"))
+        transactions = cur.fetchall()
+        cur.close()
+
+        app.logger.info(f'{email} -- searched transactions by place')
+
+    return render_template(
+        'search.html',
+        txs=transactions,
+        query=query,
+        error=error,
+        username=username
+    )
