@@ -1,7 +1,7 @@
 from email_validator import validate_email,EmailNotValidError
 from flask import request, session, render_template, current_app
 from db import get_db
-from tokens import is_token_expired
+from tokens import is_token_expired, hash_token
 from datetime import datetime, timedelta
 
 def email_validator(email):
@@ -88,7 +88,7 @@ def hit_rate_limit(action: str, key: str, limit: int, window_seconds: int) -> bo
 
 def is_delete_token_valid(token):
     cur = get_db().cursor()
-    cur.execute("SELECT delete_token_expires_at FROM users WHERE delete_token = ?", (token,))
+    cur.execute("SELECT delete_token_expires_at FROM users WHERE delete_token = ?", (hash_token(token),))
     row = cur.fetchone()
     cur.close()
     return bool(row) and not is_token_expired(row[0])
@@ -98,7 +98,7 @@ def handle_delete_confirmation(token):
         return "Invalid token", 400
     
     cur = get_db().cursor()
-    cur.execute("SELECT id, email, delete_token_expires_at FROM users WHERE delete_token = ?", (token,))
+    cur.execute("SELECT id, email, delete_token_expires_at FROM users WHERE delete_token = ?", (hash_token(token),))
     user = cur.fetchone()
     
     if not user:
