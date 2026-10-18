@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from db import get_db
 from utils.utils import get_client_ip
 from emails import send_delete_account_email, send_reset_password_email, send_verification_email
-from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation
+from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation, hit_rate_limit
 from tokens import is_token_expired
 
 load_dotenv()
@@ -35,7 +35,12 @@ def signup():
         if not email_validator(email):
             error = 'Invalid email'
             return render_template('signup.html', error=error)
-        
+
+        # Every signup sends an email through Brevo, so cap signups per client IP.
+        if hit_rate_limit("signup_ip", get_client_ip(), limit=5, window_seconds=3600):
+            app.logger.warning(f"Rate limit: too many signups from {get_client_ip()}")
+            return render_template('signup.html', error="Too many sign-ups from your network. Please try again later.")
+
         bytes = password.encode('utf-8')
         salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
         hash = bcrypt.hashpw(bytes, salt)
@@ -201,20 +206,20 @@ def forgot_password():
         ip = get_client_ip()
         email = request.form['email'].lower()
 
-        if is_rate_limited(email, ip, window_seconds=900, max_attempts=5):
-            app.logger.warning(f"Rate limit: too many password reset attempts for {email} from {ip}")
-            return render_template("forgot_password.html", msg="Too many attempts to reset your password, please try later")
-
         if not email or not email_validator(email):
-            record_login_attempt(email, ip, success=False)
             return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
+
+        # Each request can send an email, so cap per client IP and per target address.
+        if (hit_rate_limit("reset_ip", ip, limit=10, window_seconds=900)
+                or hit_rate_limit("reset_email", email, limit=3, window_seconds=3600)):
+            app.logger.warning(f"Rate limit: too many password reset requests for {email} from {ip}")
+            return render_template("forgot_password.html", msg="Too many attempts to reset your password, please try later")
 
         cur = get_db().cursor()
         cur.execute("SELECT id FROM users WHERE email = ?", (email,))
         user = cur.fetchone()
         if not user:
             cur.close()
-            record_login_attempt(email, ip, False)
             return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
 
         reset_token, reset_expires_at = create_token_with_expiry(hours=1)
@@ -222,7 +227,6 @@ def forgot_password():
         get_db().commit()
         cur.close()
         send_reset_password_email(email, reset_token)
-        record_login_attempt(email, ip, True)
         return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
     return render_template('forgot_password.html')
 
@@ -280,7 +284,10 @@ def delete_account():
         
         if not email_validator(email):
             return render_template('delete_account.html', error="Invalid email format")
-        
+
+        if hit_rate_limit("delete_email", email, limit=3, window_seconds=3600):
+            return render_template('delete_account.html', error="Too many requests. Please try again later.")
+
         delete_token, delete_expires_at = create_token_with_expiry(hours=1)
         
         cur = get_db().cursor()

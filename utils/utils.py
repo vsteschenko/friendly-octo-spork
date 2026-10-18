@@ -52,6 +52,27 @@ def record_login_attempt(email: str, ip: str, success: bool):
     db.commit()
     db.close()
 
+def hit_rate_limit(action: str, key: str, limit: int, window_seconds: int) -> bool:
+    """Count one event for (action, key). Returns True if the limit was already reached.
+
+    Blocked attempts are not counted, so a limit always clears after `window_seconds`.
+    """
+    now = datetime.now()
+    cutoff = (now - timedelta(seconds=window_seconds)).isoformat()
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT COUNT(*) FROM rate_events WHERE action = ? AND key = ? AND timestamp >= ?",
+                (action, key, cutoff))
+    if cur.fetchone()[0] >= limit:
+        cur.close()
+        return True
+    cur.execute("INSERT INTO rate_events(action, key, timestamp) VALUES (?,?,?)", (action, key, now.isoformat()))
+    # Housekeeping: nothing uses events older than 2 days.
+    cur.execute("DELETE FROM rate_events WHERE timestamp < ?", ((now - timedelta(days=2)).isoformat(),))
+    db.commit()
+    cur.close()
+    return False
+
 def handle_delete_confirmation(token):
     if not token:
         return "Invalid token", 400
