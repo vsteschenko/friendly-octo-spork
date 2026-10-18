@@ -1,18 +1,21 @@
-from flask import Flask, g
 from dotenv import load_dotenv
+# Load .env before importing config, which reads environment variables.
+load_dotenv()
+
+from flask import Flask, g
+from flask.logging import default_handler
 import os
+import re
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import DevelopmentConfig, ProductionConfig
 from db import get_db
-from emails import send_delete_account_email, send_reset_password_email, send_verification_email
-
-load_dotenv()
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# Trust exactly one proxy (nginx) for the client IP, scheme and host.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 env = os.getenv("FLASK_ENV", "production").lower()
 
@@ -21,18 +24,30 @@ if env == "development":
 else:
     app.config.from_object(ProductionConfig)
 
-log_file = 'app.log'
-handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
-handler.setLevel(logging.INFO)
+if not app.config.get("SECRET_KEY"):
+    raise RuntimeError("SECRET_KEY is not set. Add it to your .env / env file.")
 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
+EMAIL_RE = re.compile(r"([A-Za-z0-9._%+-]{1,2})[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-console_handler.setFormatter(formatter)
-app.logger.addHandler(console_handler)
+class MaskingFormatter(logging.Formatter):
+    """Logs keep only the first 2 letters of an email: alice@x.com -> al***@x.com.
+    Applied to the whole formatted line, so tracebacks are masked too."""
+    def format(self, record):
+        return EMAIL_RE.sub(r"\1***@\2", super().format(record))
+
+formatter = MaskingFormatter('%(asctime)s - %(levelname)s - %(message)s')
+handlers = [logging.StreamHandler()]  # visible with `docker compose logs`
+# Optional file log. In Docker, point it at the data volume (e.g. LOG_FILE=/data/app.log)
+# so it survives container rebuilds. If it can't be opened, keep running without it.
+if os.getenv("LOG_FILE"):
+    try:
+        handlers.append(RotatingFileHandler(os.getenv("LOG_FILE"), maxBytes=10_000_000, backupCount=3))
+    except OSError as e:
+        print(f"WARNING: cannot write LOG_FILE ({e}); logging to stdout only", flush=True)
+app.logger.removeHandler(default_handler)  # Flask's own handler would log unmasked duplicates
+for handler in handlers:
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
 app.logger.setLevel(logging.INFO)
 
 @app.template_filter('datetimeformat')

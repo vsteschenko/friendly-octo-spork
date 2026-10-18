@@ -6,18 +6,35 @@ import os, bcrypt
 from dotenv import load_dotenv
 from db import get_db
 from utils.utils import get_client_ip
-from emails import send_delete_account_email, send_reset_password_email, send_verification_email
-from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation
-from tokens import is_token_expired
+from emails import send_delete_account_email, send_reset_password_email, send_verification_email, send_account_exists_email
+from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation, hit_rate_limit, is_delete_token_valid
+from tokens import is_token_expired, hash_token, password_fingerprint
 
 load_dotenv()
 
-BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS"))
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
+
+
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=BCRYPT_ROUNDS))
+
+
+@app.before_request
+def drop_stale_sessions():
+    """Log out sessions whose account was deleted or whose password changed since login."""
+    if request.endpoint == 'static' or 'email' not in session:
+        return
+    cur = get_db().cursor()
+    cur.execute("SELECT password FROM users WHERE email = ?", (session['email'],))
+    row = cur.fetchone()
+    cur.close()
+    if row is None or session.get('pwv') != password_fingerprint(row[0]):
+        session.clear()
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form['email'].lower()
+        email = request.form.get('email', '').strip().lower()
         password = request.form['password']
         confirm_password = request.form.get('confirm_password')
         if not email or not password or not confirm_password:
@@ -35,31 +52,42 @@ def signup():
         if not email_validator(email):
             error = 'Invalid email'
             return render_template('signup.html', error=error)
-        
-        bytes = password.encode('utf-8')
-        salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
-        hash = bcrypt.hashpw(bytes, salt)
+
+        # Every signup sends an email through Brevo, so cap signups per client IP.
+        if hit_rate_limit("signup_ip", get_client_ip(), limit=5, window_seconds=3600):
+            app.logger.warning(f"Rate limit: too many signups from {get_client_ip()}")
+            return render_template('signup.html', error="Too many sign-ups from your network. Please try again later.")
 
         verification_token, verification_expires_at = create_token_with_expiry(hours=24)
+        # Always hash, even if unused, so every branch below takes about the same
+        # time and response time doesn't reveal whether the account exists.
+        password_hash = hash_password(password)
 
-        is_verified = 0
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("SELECT id, is_verified FROM users WHERE email = ?", (email,))
+        existing = cur.fetchone()
 
-        cur = get_db().cursor()
-        cur.execute("SELECT * FROM users WHERE email = ?", (email,))
-        check = cur.fetchone()
-        
-        if check is None:
-            cur.execute("INSERT INTO users(email, password, is_verified, verification_token, verification_token_expires_at) VALUES(?,?,?,?,?)",(email,hash,is_verified,verification_token, verification_expires_at))
-            get_db().commit()
-            cur.close()
-
+        if existing is None:
+            cur.execute("INSERT INTO users(email, password, is_verified, verification_token, verification_token_expires_at) VALUES(?,?,?,?,?)",
+                        (email, password_hash, 0, hash_token(verification_token), verification_expires_at))
+            db.commit()
             app.logger.info(f"New user created: {email}")
             send_verification_email(email, verification_token)
-            return redirect(url_for('login'))
-        else:
-            cur.close()
-            error='User with this email already exist'
-            return render_template('signup.html', error=error)
+        elif not existing[1]:
+            # Not verified yet: the latest signup sets the password and gets a new link.
+            # Verifying requires typing that password (see verify()), so someone who
+            # signed up with another person's email can't hijack the account.
+            cur.execute("UPDATE users SET password = ?, verification_token = ?, verification_token_expires_at = ? WHERE id = ?",
+                        (password_hash, hash_token(verification_token), verification_expires_at, existing[0]))
+            db.commit()
+            send_verification_email(email, verification_token)
+        elif not hit_rate_limit("exists_email", email, limit=2, window_seconds=3600):
+            send_account_exists_email(email)
+        # Same response whether or not the account exists, so the signup form
+        # can't be used to find out who has an account.
+        cur.close()
+        return redirect(url_for('login', check_email=1))
     return render_template('signup.html')
 
 
@@ -67,8 +95,9 @@ def signup():
 def login():
     if request.method == 'POST':
         ip = get_client_ip()
-        email = request.form['email']
-        password = request.form['password']
+        # Signup stores emails lowercased, so login must too.
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
 
         if is_rate_limited(email, ip, window_seconds=300, max_attempts=5):
             app.logger.warning(f"Rate limit: too many login attempts for {email} from {ip}")
@@ -108,6 +137,7 @@ def login():
         
         session.clear()
         session['email'] = email
+        session['pwv'] = password_fingerprint(hashed_pw)
         session.permanent = True
 
         record_login_attempt(email, ip, success=True)
@@ -119,41 +149,48 @@ def login():
 
 @app.route('/logout')
 def logout():
-    email = session['email']
-    session.pop('email', None)
-    app.logger.info(f'{email} -- logged out')
-    return render_template('login.html')
+    email = session.get('email')
+    session.clear()
+    if email:
+        app.logger.info(f'{email} -- logged out')
+    return redirect(url_for('login'))
 
 
-@app.route('/verify')
+@app.route('/verify', methods=['GET', 'POST'])
 def verify():
-    token = request.args.get('token')
-
+    """The emailed link opens a form; the account is verified only after the
+    user enters the password they signed up with."""
+    token = request.values.get('token')
     if not token:
-        return {"error:":"Invalid verification link."}, 400
+        return render_template("verification_email.html", message="Invalid verification link."), 400
 
-    cur = get_db().cursor()
-    cur.execute("SELECT id, is_verified, verification_token_expires_at FROM users WHERE verification_token = ?", (token,))
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT id, email, password, verification_token_expires_at FROM users WHERE verification_token = ? AND is_verified = 0",
+                (hash_token(token),))
     user = cur.fetchone()
-
-    if user:
-        user_id, is_verified, expires_at = user
-
-        if is_token_expired(expires_at):
-            cur.close()
-            return {"error": "Verification link has expired."}, 400
-        
-        if is_verified:
-            message = "Email already verified."
-        else:
-            cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?", (user_id,))
-            get_db().commit()
-            message = "Email verified successfully!"
+    if not user or is_token_expired(user[3]):
         cur.close()
-        return render_template("verification_email.html", message=message)
-    else:
+        return render_template("verification_email.html",
+                               message="This link is invalid or has expired. Sign up again to get a new one."), 404
+    user_id, email, password_hash, _ = user
+
+    if request.method == 'GET':
         cur.close()
-        return {"error":"Invalid or expired verification token."}, 404
+        return render_template("verification_email.html", token=token)
+
+    if not bcrypt.checkpw(request.form.get('password', '').encode('utf-8'), password_hash):
+        cur.close()
+        return render_template("verification_email.html", token=token,
+                               error="That's not the password this account was created with. "
+                                     "If you don't remember it, sign up again with the same email."), 400
+
+    cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?",
+                (user_id,))
+    db.commit()
+    cur.close()
+    app.logger.info(f"{email} -- verified email")
+    return render_template("verification_email.html", message="Email verified successfully! You can now log in.")
 
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
@@ -183,10 +220,12 @@ def change_password():
         if not ok:
             return render_template("change_password.html", error=error)
 
-        new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        new_hash = hash_password(new_password)
         cur.execute("UPDATE users SET password = ? WHERE email = ?", (new_hash, email))
         db.commit()
         cur.close()
+        # Keep this browser logged in; every other session is logged out.
+        session['pwv'] = password_fingerprint(new_hash)
 
         app.logger.info(f"{email} -- changed password")
         return render_template('change_password.html', success="Password changed successfully")
@@ -199,30 +238,29 @@ def forgot_password():
 
     if request.method == 'POST':
         ip = get_client_ip()
-        email = request.form['email'].lower()
-
-        if is_rate_limited(email, ip, window_seconds=900, max_attempts=5):
-            app.logger.warning(f"Rate limit: too many password reset attempts for {email} from {ip}")
-            return render_template("forgot_password.html", msg="Too many attempts to reset your password, please try later")
+        email = request.form.get('email', '').strip().lower()
 
         if not email or not email_validator(email):
-            record_login_attempt(email, ip, success=False)
             return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
+
+        # Each request can send an email, so cap per client IP and per target address.
+        if (hit_rate_limit("reset_ip", ip, limit=10, window_seconds=900)
+                or hit_rate_limit("reset_email", email, limit=3, window_seconds=3600)):
+            app.logger.warning(f"Rate limit: too many password reset requests for {email} from {ip}")
+            return render_template("forgot_password.html", msg="Too many attempts to reset your password, please try later")
 
         cur = get_db().cursor()
         cur.execute("SELECT id FROM users WHERE email = ?", (email,))
         user = cur.fetchone()
         if not user:
             cur.close()
-            record_login_attempt(email, ip, False)
             return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
 
         reset_token, reset_expires_at = create_token_with_expiry(hours=1)
-        cur.execute("UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?", (reset_token, reset_expires_at,email))
+        cur.execute("UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?", (hash_token(reset_token), reset_expires_at, email))
         get_db().commit()
         cur.close()
         send_reset_password_email(email, reset_token)
-        record_login_attempt(email, ip, True)
         return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
     return render_template('forgot_password.html')
 
@@ -243,20 +281,20 @@ def reset_password():
             return render_template("reset_password.html", token=token, error=error)
 
         cur = get_db().cursor()
-        cur.execute("SELECT email, reset_token_expires_at FROM users WHERE reset_token = ?", (token,))
+        cur.execute("SELECT id, reset_token_expires_at FROM users WHERE reset_token = ?", (hash_token(token),))
         user = cur.fetchone()
         if not user:
             cur.close()
             return "Invalid or expired token", 400
-        
-        email, expires_at = user
+
+        user_id, expires_at = user
 
         if is_token_expired(expires_at):
             cur.close()
             return "Invalid or expired token", 400
 
-        new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-        cur.execute("UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE reset_token = ?", (new_hash, token))
+        cur.execute("UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?",
+                    (hash_password(new_password), user_id))
         get_db().commit()
         cur.close()
         return render_template('reset_password.html', success="Password changed successfully")
@@ -264,10 +302,17 @@ def reset_password():
 
 @app.route("/delete_account", methods=['GET', 'POST'])
 def delete_account():
-    token = request.args.get('token')
-    if token:
-        return handle_delete_confirmation(token)
-    
+    # Opening the emailed link only shows a confirmation page. Email scanners
+    # and link previews open links automatically, so deleting must be a POST.
+    if request.method == 'GET' and request.args.get('token'):
+        token = request.args.get('token')
+        if not is_delete_token_valid(token):
+            return render_template('delete_account.html', error="This link is invalid or has expired."), 400
+        return render_template('delete_account.html', confirm_token=token)
+
+    if request.method == 'POST' and request.form.get('token'):
+        return handle_delete_confirmation(request.form.get('token'))
+
     if 'email' not in session:
         return redirect(url_for('login'))
 
@@ -280,11 +325,14 @@ def delete_account():
         
         if not email_validator(email):
             return render_template('delete_account.html', error="Invalid email format")
-        
+
+        if hit_rate_limit("delete_email", email, limit=3, window_seconds=3600):
+            return render_template('delete_account.html', error="Too many requests. Please try again later.")
+
         delete_token, delete_expires_at = create_token_with_expiry(hours=1)
         
         cur = get_db().cursor()
-        cur.execute("UPDATE users SET delete_token = ?, delete_token_expires_at = ? WHERE email = ?", (delete_token, delete_expires_at, email))
+        cur.execute("UPDATE users SET delete_token = ?, delete_token_expires_at = ? WHERE email = ?", (hash_token(delete_token), delete_expires_at, email))
         get_db().commit()
         cur.close()
         

@@ -256,11 +256,16 @@ var settings = {
 		// Disable animations/transitions until the page has loaded.
 			$body.addClass('is-loading');
 
-			$window.on('load', function() {
+			// jQuery 3 runs this after "load" may already have fired, so check first.
+			var onLoaded = function() {
 				window.setTimeout(function() {
 					$body.removeClass('is-loading');
 				}, 100);
-			});
+			};
+			if (document.readyState === 'complete')
+				onLoaded();
+			else
+				$window.on('load', onLoaded);
 
 		// Prioritize "important" elements on medium.
 			skel.on('+medium -medium', function() {

@@ -1,7 +1,8 @@
+import ipaddress
 from email_validator import validate_email,EmailNotValidError
 from flask import request, session, render_template, current_app
 from db import get_db
-from tokens import is_token_expired
+from tokens import is_token_expired, hash_token
 from datetime import datetime, timedelta
 
 def email_validator(email):
@@ -23,7 +24,20 @@ def password_validator(password: str):
     return True, None
 
 def get_client_ip():
-    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+    """Client address used as the rate-limit key.
+
+    ProxyFix (app.py) already replaced remote_addr with the address nginx saw.
+    Never read X-Forwarded-For directly: the client controls that header.
+    IPv6 users typically control a whole /64 block, so it counts as one client.
+    """
+    addr = request.remote_addr or "unknown"
+    try:
+        ip = ipaddress.ip_address(addr)
+    except ValueError:
+        return addr
+    if ip.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False))
+    return addr
 
 def get_user_id(email):
     cur = get_db().cursor()
@@ -32,32 +46,78 @@ def get_user_id(email):
     cur.close()
     return row[0] if row else None
 
-def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5) -> bool:
-    cutoff = (datetime.now() - timedelta(seconds=window_seconds)).isoformat()
-    db = get_db()
-    cur = db.cursor()
-    if not email_validator(email):
-        return "Incorrect email"
-    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND (email = ? OR ip = ?)", (cutoff, email, ip))
-    count = cur.fetchone()[0]
+def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5,
+                    ip_window_seconds: int = 900, ip_max_attempts: int = 20,
+                    email_window_seconds: int = 3600, email_max_attempts: int = 100) -> bool:
+    """Block login when one client keeps failing.
+
+    Limits are mainly per (email, IP) pair and per IP. A tight per-email limit
+    would let anyone lock a user out by typing wrong passwords for their address,
+    so the per-email cap is loose (100/hour): it only stops a guessing attack
+    spread over many IPs.
+    """
+    now = datetime.now()
+    cutoff = (now - timedelta(seconds=window_seconds)).isoformat()
+    ip_cutoff = (now - timedelta(seconds=ip_window_seconds)).isoformat()
+    cur = get_db().cursor()
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND email = ? AND ip = ?",
+                (cutoff, email, ip))
+    pair_failures = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND ip = ?",
+                (ip_cutoff, ip))
+    ip_failures = cur.fetchone()[0]
+    email_cutoff = (now - timedelta(seconds=email_window_seconds)).isoformat()
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND email = ?",
+                (email_cutoff, email))
+    email_failures = cur.fetchone()[0]
     cur.close()
-    return count >= max_attempts
+    return (pair_failures >= max_attempts or ip_failures >= ip_max_attempts
+            or email_failures >= email_max_attempts)
 
 def record_login_attempt(email: str, ip: str, success: bool):
     db = get_db()
     cur = db.cursor()
-    if not email_validator(email):
-        return "Incorrect email"
-    cur.execute("INSERT INTO login_attempts(email, ip, timestamp, success) VALUES (?,?,?,?)", (email, ip, datetime.now().isoformat(), 1 if success else 0))
+    cur.execute("INSERT INTO login_attempts(email, ip, timestamp, success) VALUES (?,?,?,?)",
+                (email[:254], ip, datetime.now().isoformat(), 1 if success else 0))
+    # Housekeeping: nothing reads attempts older than 30 days.
+    cur.execute("DELETE FROM login_attempts WHERE timestamp < ?", ((datetime.now() - timedelta(days=30)).isoformat(),))
     db.commit()
-    db.close()
+    cur.close()
+
+def hit_rate_limit(action: str, key: str, limit: int, window_seconds: int) -> bool:
+    """Count one event for (action, key). Returns True if the limit was already reached.
+
+    Blocked attempts are not counted, so a limit always clears after `window_seconds`.
+    """
+    now = datetime.now()
+    cutoff = (now - timedelta(seconds=window_seconds)).isoformat()
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT COUNT(*) FROM rate_events WHERE action = ? AND key = ? AND timestamp >= ?",
+                (action, key, cutoff))
+    if cur.fetchone()[0] >= limit:
+        cur.close()
+        return True
+    cur.execute("INSERT INTO rate_events(action, key, timestamp) VALUES (?,?,?)", (action, key, now.isoformat()))
+    # Housekeeping: nothing uses events older than 2 days.
+    cur.execute("DELETE FROM rate_events WHERE timestamp < ?", ((now - timedelta(days=2)).isoformat(),))
+    db.commit()
+    cur.close()
+    return False
+
+def is_delete_token_valid(token):
+    cur = get_db().cursor()
+    cur.execute("SELECT delete_token_expires_at FROM users WHERE delete_token = ?", (hash_token(token),))
+    row = cur.fetchone()
+    cur.close()
+    return bool(row) and not is_token_expired(row[0])
 
 def handle_delete_confirmation(token):
     if not token:
         return "Invalid token", 400
     
     cur = get_db().cursor()
-    cur.execute("SELECT id, email, delete_token_expires_at FROM users WHERE delete_token = ?", (token,))
+    cur.execute("SELECT id, email, delete_token_expires_at FROM users WHERE delete_token = ?", (hash_token(token),))
     user = cur.fetchone()
     
     if not user:
