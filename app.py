@@ -12,7 +12,8 @@ from emails import send_delete_account_email, send_reset_password_email, send_ve
 load_dotenv()
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# Trust exactly one proxy (nginx) for the client IP, scheme and host.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 env = os.getenv("FLASK_ENV", "production").lower()
 

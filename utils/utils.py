@@ -23,7 +23,9 @@ def password_validator(password: str):
     return True, None
 
 def get_client_ip():
-    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+    # ProxyFix (app.py) already replaced remote_addr with the address nginx saw.
+    # Never read X-Forwarded-For directly: the client controls that header.
+    return request.remote_addr or "unknown"
 
 def get_user_id(email):
     cur = get_db().cursor()
@@ -32,25 +34,36 @@ def get_user_id(email):
     cur.close()
     return row[0] if row else None
 
-def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5) -> bool:
-    cutoff = (datetime.now() - timedelta(seconds=window_seconds)).isoformat()
-    db = get_db()
-    cur = db.cursor()
-    if not email_validator(email):
-        return "Incorrect email"
-    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND (email = ? OR ip = ?)", (cutoff, email, ip))
-    count = cur.fetchone()[0]
+def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5,
+                    ip_window_seconds: int = 900, ip_max_attempts: int = 20) -> bool:
+    """Block login when one client keeps failing.
+
+    Limits are per (email, IP) pair and per IP, never per email alone:
+    a per-email limit lets anyone lock a user out by typing wrong passwords
+    for their address.
+    """
+    now = datetime.now()
+    cutoff = (now - timedelta(seconds=window_seconds)).isoformat()
+    ip_cutoff = (now - timedelta(seconds=ip_window_seconds)).isoformat()
+    cur = get_db().cursor()
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND email = ? AND ip = ?",
+                (cutoff, email, ip))
+    pair_failures = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND ip = ?",
+                (ip_cutoff, ip))
+    ip_failures = cur.fetchone()[0]
     cur.close()
-    return count >= max_attempts
+    return pair_failures >= max_attempts or ip_failures >= ip_max_attempts
 
 def record_login_attempt(email: str, ip: str, success: bool):
     db = get_db()
     cur = db.cursor()
-    if not email_validator(email):
-        return "Incorrect email"
-    cur.execute("INSERT INTO login_attempts(email, ip, timestamp, success) VALUES (?,?,?,?)", (email, ip, datetime.now().isoformat(), 1 if success else 0))
+    cur.execute("INSERT INTO login_attempts(email, ip, timestamp, success) VALUES (?,?,?,?)",
+                (email[:254], ip, datetime.now().isoformat(), 1 if success else 0))
+    # Housekeeping: nothing reads attempts older than 30 days.
+    cur.execute("DELETE FROM login_attempts WHERE timestamp < ?", ((datetime.now() - timedelta(days=30)).isoformat(),))
     db.commit()
-    db.close()
+    cur.close()
 
 def hit_rate_limit(action: str, key: str, limit: int, window_seconds: int) -> bool:
     """Count one event for (action, key). Returns True if the limit was already reached.

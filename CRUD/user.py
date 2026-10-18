@@ -17,7 +17,7 @@ BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS"))
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        email = request.form['email'].lower()
+        email = request.form.get('email', '').strip().lower()
         password = request.form['password']
         confirm_password = request.form.get('confirm_password')
         if not email or not password or not confirm_password:
@@ -72,8 +72,9 @@ def signup():
 def login():
     if request.method == 'POST':
         ip = get_client_ip()
-        email = request.form['email']
-        password = request.form['password']
+        # Signup stores emails lowercased, so login must too.
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
 
         if is_rate_limited(email, ip, window_seconds=300, max_attempts=5):
             app.logger.warning(f"Rate limit: too many login attempts for {email} from {ip}")
@@ -204,7 +205,7 @@ def forgot_password():
 
     if request.method == 'POST':
         ip = get_client_ip()
-        email = request.form['email'].lower()
+        email = request.form.get('email', '').strip().lower()
 
         if not email or not email_validator(email):
             return render_template('forgot_password.html', msg="If an account with this email exists, a password reset link has been sent.")
