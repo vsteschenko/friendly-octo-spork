@@ -155,3 +155,19 @@ class DeleteAccountTests(AppTestCase):
 
     def test_bad_token(self):
         self.assertEqual(self.client.get("/delete_account?token=nope").status_code, 400)
+
+
+class StaleSessionTests(AppTestCase):
+    def test_stale_session_is_sent_to_login_not_an_error(self):
+        self.create_verified_user("u@vsteschenko.me")
+        other = self.client.application.test_client()
+        self.login("u@vsteschenko.me", client=other)
+        self.login("u@vsteschenko.me")
+        self.client.post("/change_password", data=dict(
+            current_password="goodpassword1", new_password="changedpass12", confirm_password="changedpass12"))
+        # The other browser submits a form with its old session
+        r = other.post("/", data={"type": "expense", "expense-category": "grocery", "place": "x",
+                                  "tx_time": "10:00", "comment": "", "amount": "5"})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login", r.headers["Location"])
+        self.assertEqual(self.query("SELECT COUNT(*) FROM transactions")[0][0], 0)
