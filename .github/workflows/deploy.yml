@@ -4,27 +4,55 @@ on:
   push:
     branches:
       - main
+  pull_request:
+
+# The workflow only needs to read the code.
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run tests
+        run: pytest -q
+
+  deploy:
+    # Only deploy pushes to main, and only if the tests passed.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
 
     steps:
       - name: Set up SSH key and known hosts
         run: |
           mkdir -p ~/.ssh
-          echo "$VPS_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 134.122.56.15 >> ~/.ssh/known_hosts
+          echo "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          # Pinned server fingerprint (not fetched at deploy time, which could be spoofed).
+          echo "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
 
       - name: Deploy to server
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh -i ~/.ssh/id_rsa ledgeradmin@134.122.56.15 << 'EOF'
+          ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" << 'EOF'
             set -euo pipefail
 
-            APP_DIR="/home/ledgeradmin/ledger/app/friendly-octo-spork"
+            APP_DIR="$HOME/ledger/app/friendly-octo-spork"
             cd "$APP_DIR"
 
             git fetch --all

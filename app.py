@@ -1,15 +1,17 @@
-from flask import Flask, g
 from dotenv import load_dotenv
+# Load .env before importing config, which reads environment variables.
+load_dotenv()
+
+from flask import Flask, g
+from flask.logging import default_handler
 import os
+import re
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import DevelopmentConfig, ProductionConfig
 from db import get_db
-from emails import send_delete_account_email, send_reset_password_email, send_verification_email
-
-load_dotenv()
 
 app = Flask(__name__)
 # Trust exactly one proxy (nginx) for the client IP, scheme and host.
@@ -22,18 +24,29 @@ if env == "development":
 else:
     app.config.from_object(ProductionConfig)
 
-log_file = 'app.log'
-handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=3)
-handler.setLevel(logging.INFO)
+if not app.config.get("SECRET_KEY"):
+    raise RuntimeError("SECRET_KEY is not set. Add it to your .env / env file.")
+
+EMAIL_RE = re.compile(r"([A-Za-z0-9._%+-]{1,2})[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})")
+
+class MaskEmails(logging.Filter):
+    """Logs keep only the first 2 letters of an email: alice@x.com -> al***@x.com."""
+    def filter(self, record):
+        record.msg = EMAIL_RE.sub(r"\1***@\2", record.getMessage())
+        record.args = None
+        return True
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-console_handler.setFormatter(formatter)
-app.logger.addHandler(console_handler)
+handlers = [logging.StreamHandler()]  # visible with `docker compose logs`
+# Optional file log. In Docker, point it at the data volume (e.g. LOG_FILE=/data/app.log)
+# so it survives container rebuilds.
+if os.getenv("LOG_FILE"):
+    handlers.append(RotatingFileHandler(os.getenv("LOG_FILE"), maxBytes=10_000_000, backupCount=3))
+app.logger.removeHandler(default_handler)  # Flask's own handler would log unmasked duplicates
+for handler in handlers:
+    handler.setFormatter(formatter)
+    handler.addFilter(MaskEmails())
+    app.logger.addHandler(handler)
 app.logger.setLevel(logging.INFO)
 
 @app.template_filter('datetimeformat')

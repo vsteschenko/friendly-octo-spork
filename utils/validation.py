@@ -40,7 +40,7 @@ def parse_transaction_form(form, year, month, day):
 
     try:
         hour, minute = map(int, form.get('tx_time', '').split(':'))
-        timestamp = datetime(year, month, day, hour, minute)
+        timestamp = datetime(year, month, day, hour, minute).strftime('%Y-%m-%d %H:%M:%S')
     except (ValueError, TypeError):
         return None, 'Invalid date or time'
 

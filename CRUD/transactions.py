@@ -315,9 +315,9 @@ def transactions_by_categories():
     if not category:
         return jsonify({"error": "category is required"}), 400
 
-    first_day = datetime(year, month, 1, 0, 0, 0)
+    first_day = datetime(year, month, 1, 0, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
     last_day_num = monthrange(year, month)[1]
-    last_day = datetime(year, month, last_day_num, 23, 59, 59)
+    last_day = datetime(year, month, last_day_num, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
 
     cur = get_db().cursor()
     cur.execute("SELECT amount, timestamp, category, place FROM transactions WHERE user_id=? AND type='expense' AND category=? AND timestamp BETWEEN ? AND ? ORDER BY timestamp ASC", (user_id, category, first_day, last_day))
@@ -353,8 +353,8 @@ def transactions_by_categories_year():
     if not category:
         return jsonify({"error": "category is required"}), 400
 
-    start_of_year = datetime(year, 1, 1, 0, 0, 0)
-    end_of_year = datetime(year, 12, 31, 23, 59, 59)
+    start_of_year = datetime(year, 1, 1, 0, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
+    end_of_year = datetime(year, 12, 31, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
 
     cur = get_db().cursor()
     cur.execute(
