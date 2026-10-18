@@ -125,10 +125,11 @@ def login():
 
 @app.route('/logout')
 def logout():
-    email = session['email']
-    session.pop('email', None)
-    app.logger.info(f'{email} -- logged out')
-    return render_template('login.html')
+    email = session.get('email')
+    session.clear()
+    if email:
+        app.logger.info(f'{email} -- logged out')
+    return redirect(url_for('login'))
 
 
 @app.route('/verify')

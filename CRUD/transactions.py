@@ -5,6 +5,22 @@ from datetime import datetime
 from calendar import monthrange
 from db import get_db
 from utils.categories import category_name, income_category_name
+from utils.validation import parse_transaction_form
+
+
+def date_args(source, need_day=True, need_month=True):
+    """Read year/month/day from a request dict; returns None if missing or invalid."""
+    today = datetime.now()
+    year = source.get('year', default=today.year, type=int)
+    month = source.get('month', default=today.month, type=int)
+    day = source.get('day', default=1, type=int)
+    if year is None or not 1900 <= year <= 2200:
+        return None
+    if need_month and (month is None or not 1 <= month <= 12):
+        return None
+    if need_day and (day is None or not 1 <= day <= monthrange(year, month)[1]):
+        return None
+    return year, month, day
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -12,15 +28,16 @@ def index():
         email = session["email"]
         user_id = get_user_id(email)
 
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        current_day = datetime.now().day
+        today = datetime.now()
         username = email.split("@")[0]
-        if 'year' in request.args:
-            current_year = int(request.args.get('year'))
+        # type=int falls back to the default instead of crashing on junk input
+        current_year = request.args.get('year', default=today.year, type=int)
+        current_month = request.args.get('month', default=today.month, type=int)
+        current_day = request.args.get('day', default=today.day, type=int)
+        if not 1900 <= current_year <= 2200:
+            current_year = today.year
 
         if 'month' in request.args:
-            current_month = int(request.args.get('month'))
             if current_month < 1:
                 current_month = 12
                 current_year -= 1
@@ -28,8 +45,10 @@ def index():
                 current_month = 1
                 current_year += 1
         
+        if not 1 <= current_month <= 12:
+            current_month = today.month
+
         if 'day' in request.args:
-            current_day = int(request.args.get('day'))
             days_in_month = monthrange(current_year, current_month)[1]
             if current_day < 1:
                 current_month -= 1
@@ -43,6 +62,9 @@ def index():
                     current_month = 1
                     current_year += 1
                 current_day = 1
+
+        # e.g. ?month=2 on the 31st: keep the day inside the month
+        current_day = min(max(current_day, 1), monthrange(current_year, current_month)[1])
 
         start_of_day = datetime(current_year, current_month, current_day, 0, 0, 0).strftime('%Y-%m-%d %H:%M:%S')
         end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
@@ -74,28 +96,11 @@ def index():
         sum = cur.fetchone()[0]
 
         if request.method == 'POST':
-            type = request.form['type']
-            place = request.form['place']
-            time = request.form['tx_time']
-            comment = request.form['comment']
-            hour, minute = map(int, time.split(':'))
-            transaction_date = datetime(current_year, current_month, current_day, hour, minute)
-            if len(place) > 100:
-                return {'error': 'Name of the place is too long'}, 404
-            if len(comment) > 250:
-                return {'error': 'Comment is too long'}, 404
-            if type == 'expense':
-                category = request.form.get('expense-category')
-            elif type == 'income':
-                category = request.form.get('income-category')
-
-            amount = request.form['amount']
-            if type == 'expense':
-                amount = -float(amount)
-
-            if not type or not amount or not user_id or not category or not transaction_date:
-                return {'error': 'Select category'}, 401
-            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place,comment) VALUES(?,?,?,?,?,?,?)",(type, amount, user_id, transaction_date, category, place, comment))
+            tx, error = parse_transaction_form(request.form, current_year, current_month, current_day)
+            if error:
+                return {'error': error}, 400
+            cur.execute("INSERT INTO transactions(type,amount,user_id,timestamp,category,place,comment) VALUES(?,?,?,?,?,?,?)",
+                        (tx['type'], tx['amount'], user_id, tx['timestamp'], tx['category'], tx['place'], tx['comment']))
             get_db().commit()
             cur.close()
 
@@ -114,9 +119,10 @@ def expenses_by_category():
     email = session["email"]
     user_id = get_user_id(email)
 
-    current_year = int(request.args.get('year'))
-    current_month = int(request.args.get('month'))
-    current_day = int(request.args.get('day'))
+    parsed = date_args(request.args)
+    if parsed is None:
+        return {"error": "Invalid date"}, 400
+    current_year, current_month, current_day = parsed
 
     start_of_day = datetime(current_year, current_month, current_day).strftime('%Y-%m-%d %H:%M:%S')
     end_of_day = datetime(current_year, current_month, current_day, 23, 59, 59).strftime('%Y-%m-%d %H:%M:%S')
@@ -196,7 +202,7 @@ def annual_report():
     sum_by_category = cur.fetchall()
     new_sum_by_category = []
     for cat in sum_by_category:
-        x = category_name[cat[0]]
+        x = category_name.get(cat[0], cat[0])  # older rows may hold unknown categories
         new_tx = (cat[0], cat[1], x)
         new_sum_by_category.append(new_tx)
     sum_by_category = new_sum_by_category
@@ -204,7 +210,7 @@ def annual_report():
     income_by_category = cur.fetchall()
     new_income_by_category = []
     for cat in income_by_category:
-        x = income_category_name[cat[0]]
+        x = income_category_name.get(cat[0], cat[0])
         new_tx = (cat[0], cat[1], x)
         new_income_by_category.append(new_tx)
     income_by_category = new_income_by_category
@@ -249,7 +255,6 @@ def delete_tx():
         else:
             app.logger.info(f"{email} -- deleted transaction {tx_id}")
         cur.close()
-        app.logger.info(f'{email} -- deleted transaction {tx_id}')
 
         current_year = request.form.get('year')
         current_month = request.form.get('month')
@@ -262,35 +267,15 @@ def update_tx():
     if 'email' in session:
         email = session['email']
         user_id = get_user_id(email)
-        tx_id = request.form['tx_id']
-        type = request.form['type']
-        place = request.form['place']
-        amount = request.form['amount']
-        comment = request.form['comment']
-        current_year = int(request.form.get('year'))
-        current_month = int(request.form.get('month'))
-        current_day = int(request.form.get('day'))
-        time = request.form['tx_time']
-        hour, minute = map(int, time.split(':'))
-        transaction_date = datetime(current_year, current_month, current_day, hour, minute)
+        tx_id = request.form.get('tx_id', type=int)
+        parsed = date_args(request.form)
+        if tx_id is None or parsed is None:
+            return {'error': 'Invalid request'}, 400
+        current_year, current_month, current_day = parsed
 
-        if type == 'expense':
-            category = request.form.get('expense-category')
-            amount = -float(amount)
-        elif type == 'income':
-            category = request.form.get('income-category')
-            amount = float(amount)
-
-        if not tx_id or not type or not place or not amount or not category or not transaction_date:
-            return {'error': 'All fields are required'}, 400
-        if len(place) > 100:
-            return {'error': 'Place name is too long'}, 400
-        if len(comment) > 250:
-            return {'error': 'Comment is too long'}, 400
-        try:
-            amount = float(amount)
-        except ValueError:
-            return {'error': 'Invalid amount'}, 400
+        tx, error = parse_transaction_form(request.form, current_year, current_month, current_day)
+        if error:
+            return {'error': error}, 400
 
         cur = get_db().cursor()
 
@@ -302,7 +287,7 @@ def update_tx():
             UPDATE transactions
             SET type = ?, place = ?, amount = ?, category = ?, timestamp = ?, comment = ?
             WHERE id = ? AND user_id = ?
-        """, (type, place, amount, category, transaction_date, comment, tx_id, user_id))
+        """, (tx['type'], tx['place'], tx['amount'], tx['category'], tx['timestamp'], tx['comment'], tx_id, user_id))
         get_db().commit()
         cur.close()
 
@@ -322,8 +307,10 @@ def transactions_by_categories():
     email = session['email']
     user_id = get_user_id(email)
     category = request.args.get("category")
-    year = int(request.args.get("year", datetime.now().year))
-    month = int(request.args.get("month", datetime.now().month))
+    parsed = date_args(request.args, need_day=False)
+    if parsed is None:
+        return jsonify({"error": "invalid date"}), 400
+    year, month, _ = parsed
 
     if not category:
         return jsonify({"error": "category is required"}), 400
@@ -359,7 +346,10 @@ def transactions_by_categories_year():
         return jsonify({"error": "invalid type"}), 400
     
     category = request.args.get("category")
-    year = int(request.args.get("year", datetime.now().year))
+    parsed = date_args(request.args, need_day=False, need_month=False)
+    if parsed is None:
+        return jsonify({"error": "invalid year"}), 400
+    year = parsed[0]
     if not category:
         return jsonify({"error": "category is required"}), 400
 
