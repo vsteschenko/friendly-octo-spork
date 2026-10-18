@@ -55,6 +55,15 @@ jobs:
             APP_DIR="$HOME/ledger/app/friendly-octo-spork"
             cd "$APP_DIR"
 
+            # The container runs as UID 1000 and must be able to write the database.
+            # Stop here (the running site stays up) if the data folder isn't owned by it.
+            WRONG_OWNER="$(find "$HOME/ledger/data" ! -uid 1000 -print -quit 2>/dev/null || true)"
+            if [ -n "$WRONG_OWNER" ]; then
+              echo "ERROR: $HOME/ledger/data must be owned by UID 1000."
+              echo "Run once on the server: sudo chown -R 1000:1000 ~/ledger/data"
+              exit 1
+            fi
+
             git fetch --all
             git reset --hard origin/main
             git clean -fd

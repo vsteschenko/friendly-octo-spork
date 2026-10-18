@@ -4,10 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Verification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
+    {% if token %}
+    <form method="post" action="{{ url_for('verify') }}">
+        <h1>Confirm your email</h1>
+        <p>Enter the password you chose when you signed up.</p>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+        <button type="submit">Verify</button>
+        {% if error %}<div style="color: red">{{ error }}</div>{% endif %}
+    </form>
+    {% else %}
     <h1>{{ message }}</h1>
     <a href="{{ url_for('login') }}">Go to Login</a>
+    {% endif %}
 </body>
 </html>

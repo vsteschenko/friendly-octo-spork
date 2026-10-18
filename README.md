@@ -73,7 +73,13 @@ Pushing to `main` runs the tests and, if they pass, deploys over SSH
 Add `LOG_FILE=/data/app.log` to keep logs across redeploys.
 
 The container runs as an unprivileged user with UID 1000, so the data folder must be
-owned by that UID: `sudo chown -R 1000:1000 ~/ledger/data`.
+owned by that UID: `sudo chown -R 1000:1000 ~/ledger/data`. The deploy stops (and the
+running site stays up) if it isn't.
+
+Rate limits use the client IP from nginx. The nginx `location` that proxies to the app
+must contain `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, and nothing
+else (e.g. Cloudflare) may sit in front of nginx, otherwise `ProxyFix` in `app.py` needs
+adjusting.
 
 **Brevo API keys expire after 90 days without use.** If the app sends no emails for a
 long time, send yourself a password reset now and then, or the key has to be rotated.

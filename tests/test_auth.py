@@ -8,7 +8,10 @@ class SignupTests(AppTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("check_email=1", r.headers["Location"])
         token = self.last_token("verification")
+        # Opening the link only shows a form (email scanners open links too)
         self.assertEqual(self.client.get(f"/verify?token={token}").status_code, 200)
+        self.assertEqual(self.login("new@vsteschenko.me").status_code, 200)  # not verified yet
+        self.assertEqual(self.verify().status_code, 200)
         self.assertEqual(self.login("new@vsteschenko.me").status_code, 302)
 
     def test_login_is_case_insensitive(self):
@@ -31,13 +34,28 @@ class SignupTests(AppTestCase):
         self.assertEqual(new.status_code, taken.status_code)
         self.assertEqual(new.headers["Location"], taken.headers["Location"])
 
-    def test_resignup_resends_link_without_changing_password(self):
-        self.signup("pending@vsteschenko.me")
-        self.signup("pending@vsteschenko.me", password="attackerpass9")
-        self.assertEqual(self.count_sent("verification"), 2)
-        self.client.get(f"/verify?token={self.last_token('verification')}")
-        self.assertEqual(self.login("pending@vsteschenko.me", "attackerpass9").status_code, 200)
-        self.assertEqual(self.login("pending@vsteschenko.me", PASSWORD).status_code, 302)
+    def test_attacker_cannot_preregister_someone_elses_email(self):
+        # Attacker signs up with the victim's address and their own password
+        self.signup("victim@vsteschenko.me", password="attackerpass9", ip="6.6.6.6")
+        # Victim later signs up and verifies with their own password
+        self.signup("victim@vsteschenko.me", password=PASSWORD, ip="1.2.3.4")
+        self.assertEqual(self.verify(PASSWORD).status_code, 200)
+        self.assertEqual(self.login("victim@vsteschenko.me", "attackerpass9").status_code, 200)
+        self.assertEqual(self.login("victim@vsteschenko.me", PASSWORD).status_code, 302)
+
+    def test_verify_needs_the_signup_password(self):
+        self.signup("victim@vsteschenko.me", password=PASSWORD, ip="1.2.3.4")
+        # Attacker signs up afterwards; the victim clicks the newest link but
+        # the attacker's password is now set, so the victim's password is refused
+        self.signup("victim@vsteschenko.me", password="attackerpass9", ip="6.6.6.6")
+        self.assertEqual(self.verify(PASSWORD).status_code, 400)
+        self.assertEqual(self.query("SELECT is_verified FROM users")[0][0], 0)
+
+    def test_existing_account_gets_a_notice_instead(self):
+        self.create_verified_user("taken@vsteschenko.me")
+        self.signup("taken@vsteschenko.me", ip="10.0.0.9")
+        self.assertEqual(self.count_sent("account_exists"), 1)
+        self.assertEqual(self.login("taken@vsteschenko.me").status_code, 302)  # password unchanged
 
     def test_signup_emails_are_rate_limited_per_ip(self):
         for i in range(10):
@@ -68,6 +86,20 @@ class LoginRateLimitTests(AppTestCase):
         for i in range(5):
             self.login("user@vsteschenko.me", "wrong", ip=f"10.9.9.{i}, 6.6.6.6")
         r = self.login("user@vsteschenko.me", ip="99.99.99.99, 6.6.6.6")
+        self.assertIn(b"Too many login attempts", r.data)
+
+    def test_guessing_from_many_ips_is_capped_per_account(self):
+        self.create_verified_user("user@vsteschenko.me")
+        for i in range(100):
+            self.login("user@vsteschenko.me", "wrong", ip=f"8.8.{i // 250}.{i % 250}")
+        r = self.login("user@vsteschenko.me", ip="1.2.3.4")
+        self.assertIn(b"Too many login attempts", r.data)
+
+    def test_ipv6_addresses_in_one_block_count_as_one_client(self):
+        self.create_verified_user("user@vsteschenko.me")
+        for i in range(5):
+            self.login("user@vsteschenko.me", "wrong", ip=f"2001:db8:1:2::{i + 1}")
+        r = self.login("user@vsteschenko.me", ip="2001:db8:1:2::99")
         self.assertIn(b"Too many login attempts", r.data)
 
     def test_malformed_email_gets_normal_error(self):

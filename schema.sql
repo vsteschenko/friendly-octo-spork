@@ -43,4 +43,5 @@ CREATE TABLE IF NOT EXISTS rate_events (
 
 CREATE INDEX IF NOT EXISTS idx_rate_events_lookup ON rate_events(action, key, timestamp);
 CREATE INDEX IF NOT EXISTS idx_login_attempts_ts ON login_attempts(timestamp);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email ON login_attempts(email, timestamp);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_ts ON transactions(user_id, timestamp);

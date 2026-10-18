@@ -24,7 +24,8 @@ class AppTestCase(unittest.TestCase):
             patch(f"CRUD.user.send_{kind}_email",
                   side_effect=lambda email, token, kind=kind: self.sent.append((kind, email, token)))
             for kind in ("verification", "reset_password", "delete_account")
-        ]
+        ] + [patch("CRUD.user.send_account_exists_email",
+                   side_effect=lambda email: self.sent.append(("account_exists", email, None)))]
         for p in self._patches:
             p.start()
 
@@ -46,10 +47,13 @@ class AppTestCase(unittest.TestCase):
             "/signup", data=dict(email=email, password=password, confirm_password=password),
             headers={"X-Forwarded-For": ip})
 
+    def verify(self, password=PASSWORD, token=None):
+        token = token or self.last_token("verification")
+        return self.client.post("/verify", data=dict(token=token, password=password))
+
     def create_verified_user(self, email, password=PASSWORD):
         self.signup(email, password)
-        token = self.last_token("verification")
-        self.client.get(f"/verify?token={token}")
+        self.verify(password)
 
     def login(self, email, password=PASSWORD, ip="10.0.0.1", client=None):
         return (client or self.client).post(

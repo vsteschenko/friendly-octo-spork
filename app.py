@@ -29,23 +29,24 @@ if not app.config.get("SECRET_KEY"):
 
 EMAIL_RE = re.compile(r"([A-Za-z0-9._%+-]{1,2})[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 
-class MaskEmails(logging.Filter):
-    """Logs keep only the first 2 letters of an email: alice@x.com -> al***@x.com."""
-    def filter(self, record):
-        record.msg = EMAIL_RE.sub(r"\1***@\2", record.getMessage())
-        record.args = None
-        return True
+class MaskingFormatter(logging.Formatter):
+    """Logs keep only the first 2 letters of an email: alice@x.com -> al***@x.com.
+    Applied to the whole formatted line, so tracebacks are masked too."""
+    def format(self, record):
+        return EMAIL_RE.sub(r"\1***@\2", super().format(record))
 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+formatter = MaskingFormatter('%(asctime)s - %(levelname)s - %(message)s')
 handlers = [logging.StreamHandler()]  # visible with `docker compose logs`
 # Optional file log. In Docker, point it at the data volume (e.g. LOG_FILE=/data/app.log)
-# so it survives container rebuilds.
+# so it survives container rebuilds. If it can't be opened, keep running without it.
 if os.getenv("LOG_FILE"):
-    handlers.append(RotatingFileHandler(os.getenv("LOG_FILE"), maxBytes=10_000_000, backupCount=3))
+    try:
+        handlers.append(RotatingFileHandler(os.getenv("LOG_FILE"), maxBytes=10_000_000, backupCount=3))
+    except OSError as e:
+        print(f"WARNING: cannot write LOG_FILE ({e}); logging to stdout only", flush=True)
 app.logger.removeHandler(default_handler)  # Flask's own handler would log unmasked duplicates
 for handler in handlers:
     handler.setFormatter(formatter)
-    handler.addFilter(MaskEmails())
     app.logger.addHandler(handler)
 app.logger.setLevel(logging.INFO)
 

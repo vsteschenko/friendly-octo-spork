@@ -6,7 +6,7 @@ import os, bcrypt
 from dotenv import load_dotenv
 from db import get_db
 from utils.utils import get_client_ip
-from emails import send_delete_account_email, send_reset_password_email, send_verification_email
+from emails import send_delete_account_email, send_reset_password_email, send_verification_email, send_account_exists_email
 from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation, hit_rate_limit, is_delete_token_valid
 from tokens import is_token_expired, hash_token, password_fingerprint
 
@@ -59,6 +59,9 @@ def signup():
             return render_template('signup.html', error="Too many sign-ups from your network. Please try again later.")
 
         verification_token, verification_expires_at = create_token_with_expiry(hours=24)
+        # Always hash, even if unused, so every branch below takes about the same
+        # time and response time doesn't reveal whether the account exists.
+        password_hash = hash_password(password)
 
         db = get_db()
         cur = db.cursor()
@@ -67,17 +70,20 @@ def signup():
 
         if existing is None:
             cur.execute("INSERT INTO users(email, password, is_verified, verification_token, verification_token_expires_at) VALUES(?,?,?,?,?)",
-                        (email, hash_password(password), 0, hash_token(verification_token), verification_expires_at))
+                        (email, password_hash, 0, hash_token(verification_token), verification_expires_at))
             db.commit()
             app.logger.info(f"New user created: {email}")
             send_verification_email(email, verification_token)
         elif not existing[1]:
-            # Not verified yet (maybe the first link expired): send a fresh link.
-            # The password is NOT changed, so nobody can take over a pending account.
-            cur.execute("UPDATE users SET verification_token = ?, verification_token_expires_at = ? WHERE id = ?",
-                        (hash_token(verification_token), verification_expires_at, existing[0]))
+            # Not verified yet: the latest signup sets the password and gets a new link.
+            # Verifying requires typing that password (see verify()), so someone who
+            # signed up with another person's email can't hijack the account.
+            cur.execute("UPDATE users SET password = ?, verification_token = ?, verification_token_expires_at = ? WHERE id = ?",
+                        (password_hash, hash_token(verification_token), verification_expires_at, existing[0]))
             db.commit()
             send_verification_email(email, verification_token)
+        elif not hit_rate_limit("exists_email", email, limit=2, window_seconds=3600):
+            send_account_exists_email(email)
         # Same response whether or not the account exists, so the signup form
         # can't be used to find out who has an account.
         cur.close()
@@ -150,35 +156,41 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/verify')
+@app.route('/verify', methods=['GET', 'POST'])
 def verify():
-    token = request.args.get('token')
-
+    """The emailed link opens a form; the account is verified only after the
+    user enters the password they signed up with."""
+    token = request.values.get('token')
     if not token:
-        return {"error:":"Invalid verification link."}, 400
+        return render_template("verification_email.html", message="Invalid verification link."), 400
 
-    cur = get_db().cursor()
-    cur.execute("SELECT id, is_verified, verification_token_expires_at FROM users WHERE verification_token = ?", (hash_token(token),))
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT id, email, password, verification_token_expires_at FROM users WHERE verification_token = ? AND is_verified = 0",
+                (hash_token(token),))
     user = cur.fetchone()
-
-    if user:
-        user_id, is_verified, expires_at = user
-
-        if is_token_expired(expires_at):
-            cur.close()
-            return {"error": "Verification link has expired."}, 400
-        
-        if is_verified:
-            message = "Email already verified."
-        else:
-            cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?", (user_id,))
-            get_db().commit()
-            message = "Email verified successfully!"
+    if not user or is_token_expired(user[3]):
         cur.close()
-        return render_template("verification_email.html", message=message)
-    else:
+        return render_template("verification_email.html",
+                               message="This link is invalid or has expired. Sign up again to get a new one."), 404
+    user_id, email, password_hash, _ = user
+
+    if request.method == 'GET':
         cur.close()
-        return {"error":"Invalid or expired verification token."}, 404
+        return render_template("verification_email.html", token=token)
+
+    if not bcrypt.checkpw(request.form.get('password', '').encode('utf-8'), password_hash):
+        cur.close()
+        return render_template("verification_email.html", token=token,
+                               error="That's not the password this account was created with. "
+                                     "If you don't remember it, sign up again with the same email."), 400
+
+    cur.execute("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?",
+                (user_id,))
+    db.commit()
+    cur.close()
+    app.logger.info(f"{email} -- verified email")
+    return render_template("verification_email.html", message="Email verified successfully! You can now log in.")
 
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():

@@ -1,3 +1,4 @@
+import ipaddress
 from email_validator import validate_email,EmailNotValidError
 from flask import request, session, render_template, current_app
 from db import get_db
@@ -23,9 +24,20 @@ def password_validator(password: str):
     return True, None
 
 def get_client_ip():
-    # ProxyFix (app.py) already replaced remote_addr with the address nginx saw.
-    # Never read X-Forwarded-For directly: the client controls that header.
-    return request.remote_addr or "unknown"
+    """Client address used as the rate-limit key.
+
+    ProxyFix (app.py) already replaced remote_addr with the address nginx saw.
+    Never read X-Forwarded-For directly: the client controls that header.
+    IPv6 users typically control a whole /64 block, so it counts as one client.
+    """
+    addr = request.remote_addr or "unknown"
+    try:
+        ip = ipaddress.ip_address(addr)
+    except ValueError:
+        return addr
+    if ip.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False))
+    return addr
 
 def get_user_id(email):
     cur = get_db().cursor()
@@ -35,12 +47,14 @@ def get_user_id(email):
     return row[0] if row else None
 
 def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts: int = 5,
-                    ip_window_seconds: int = 900, ip_max_attempts: int = 20) -> bool:
+                    ip_window_seconds: int = 900, ip_max_attempts: int = 20,
+                    email_window_seconds: int = 3600, email_max_attempts: int = 100) -> bool:
     """Block login when one client keeps failing.
 
-    Limits are per (email, IP) pair and per IP, never per email alone:
-    a per-email limit lets anyone lock a user out by typing wrong passwords
-    for their address.
+    Limits are mainly per (email, IP) pair and per IP. A tight per-email limit
+    would let anyone lock a user out by typing wrong passwords for their address,
+    so the per-email cap is loose (100/hour): it only stops a guessing attack
+    spread over many IPs.
     """
     now = datetime.now()
     cutoff = (now - timedelta(seconds=window_seconds)).isoformat()
@@ -52,8 +66,13 @@ def is_rate_limited(email: str, ip: str, window_seconds: int = 300, max_attempts
     cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND ip = ?",
                 (ip_cutoff, ip))
     ip_failures = cur.fetchone()[0]
+    email_cutoff = (now - timedelta(seconds=email_window_seconds)).isoformat()
+    cur.execute("SELECT COUNT(*) FROM login_attempts WHERE success = 0 AND timestamp >= ? AND email = ?",
+                (email_cutoff, email))
+    email_failures = cur.fetchone()[0]
     cur.close()
-    return pair_failures >= max_attempts or ip_failures >= ip_max_attempts
+    return (pair_failures >= max_attempts or ip_failures >= ip_max_attempts
+            or email_failures >= email_max_attempts)
 
 def record_login_attempt(email: str, ip: str, success: bool):
     db = get_db()

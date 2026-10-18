@@ -3,7 +3,6 @@ import sqlite3
 from flask import g, current_app
 
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.sql")
-_initialized_paths = set()
 
 
 def init_db(db):
@@ -18,7 +17,7 @@ def get_db():
     if db is None:
         path = current_app.config["DATABASE"]
         db = g._database = sqlite3.connect(path)
-        if path not in _initialized_paths:
-            init_db(db)
-            _initialized_paths.add(path)
+        # Cheap (every statement is IF NOT EXISTS) and always correct, even if
+        # the database file is replaced while the app is running.
+        init_db(db)
     return db
