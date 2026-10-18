@@ -86,6 +86,13 @@ def hit_rate_limit(action: str, key: str, limit: int, window_seconds: int) -> bo
     cur.close()
     return False
 
+def is_delete_token_valid(token):
+    cur = get_db().cursor()
+    cur.execute("SELECT delete_token_expires_at FROM users WHERE delete_token = ?", (token,))
+    row = cur.fetchone()
+    cur.close()
+    return bool(row) and not is_token_expired(row[0])
+
 def handle_delete_confirmation(token):
     if not token:
         return "Invalid token", 400

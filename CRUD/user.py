@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from db import get_db
 from utils.utils import get_client_ip
 from emails import send_delete_account_email, send_reset_password_email, send_verification_email
-from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation, hit_rate_limit
+from utils.utils import is_rate_limited, record_login_attempt, handle_delete_confirmation, hit_rate_limit, is_delete_token_valid
 from tokens import is_token_expired
 
 load_dotenv()
@@ -269,10 +269,17 @@ def reset_password():
 
 @app.route("/delete_account", methods=['GET', 'POST'])
 def delete_account():
-    token = request.args.get('token')
-    if token:
-        return handle_delete_confirmation(token)
-    
+    # Opening the emailed link only shows a confirmation page. Email scanners
+    # and link previews open links automatically, so deleting must be a POST.
+    if request.method == 'GET' and request.args.get('token'):
+        token = request.args.get('token')
+        if not is_delete_token_valid(token):
+            return render_template('delete_account.html', error="This link is invalid or has expired."), 400
+        return render_template('delete_account.html', confirm_token=token)
+
+    if request.method == 'POST' and request.form.get('token'):
+        return handle_delete_confirmation(request.form.get('token'))
+
     if 'email' not in session:
         return redirect(url_for('login'))
 

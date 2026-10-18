@@ -10,6 +10,14 @@
         <div style="color: green; margin: 10px 0;">{{ success }}</div>
     {% elif error %}
         <div style="color: red; margin: 10px 0;">{{ error }}</div>
+    {% elif confirm_token %}
+        <p><strong>Last step.</strong> Clicking the button below permanently deletes your account and all your transactions. This cannot be undone.</p>
+        <form method="POST" action="{{ url_for('delete_account') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="token" value="{{ confirm_token }}">
+            <button type="submit">Permanently delete my account</button>
+        </form>
+        <p><a href="{{ url_for('index') }}">Cancel, keep my account</a></p>
     {% else %}
         <p>This action is irreversible. Deleting your account will permanently remove:</p>
         <ul>
