@@ -30,6 +30,9 @@ def drop_stale_sessions():
     cur.close()
     if row is None or session.get('pwv') != password_fingerprint(row[0]):
         session.clear()
+        # Send the user to log in again, instead of letting the request continue
+        # without a session (a form POST would fail with "CSRF token missing").
+        return redirect(url_for('login'))
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
